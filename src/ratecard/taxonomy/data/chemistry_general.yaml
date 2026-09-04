@@ -1,0 +1,169 @@
+# Electrolytes, minerals, pancreatic and muscle enzymes, iron studies.
+
+- id: electrolytes
+  name: Serum Electrolytes
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  is_panel: true
+  analytes: [sodium, potassium, chloride]
+  components: [sodium, potassium, chloride]
+  aliases: [electrolytes, serum electrolytes, Na K Cl, electrolyte panel,
+            serum electrolyte, electrolytes (Na K Cl), E lytes]
+
+- id: sodium
+  name: Serum Sodium
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2951-2"
+  aliases: [sodium, serum sodium, Na, S sodium, sodium serum]
+
+- id: potassium
+  name: Serum Potassium
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2823-3"
+  aliases: [potassium, serum potassium, K, S potassium, potassium serum]
+
+- id: chloride
+  name: Serum Chloride
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2075-0"
+  aliases: [chloride, serum chloride, Cl, S chloride, chlorides]
+
+- id: calcium_serum
+  name: Serum Calcium
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "17861-6"
+  distinct_from: [calcium_ionised]
+  aliases: [calcium, serum calcium, S calcium, total calcium,
+            calcium total, calcium serum]
+
+- id: calcium_ionised
+  name: Ionised Calcium
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "17862-4"
+  aliases: [ionised calcium, ionized calcium, free calcium,
+            calcium ionised, iCa]
+  notes: HARD NEGATIVE vs calcium_serum. Separately ordered and separately priced.
+
+- id: phosphorus
+  name: Serum Phosphorus
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2777-1"
+  aliases: [phosphorus, serum phosphorus, inorganic phosphorus, phosphate,
+            S phosphorus, phosphorous]
+
+- id: magnesium
+  name: Serum Magnesium
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2601-3"
+  aliases: [magnesium, serum magnesium, Mg, S magnesium]
+
+- id: amylase
+  name: Serum Amylase
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "1798-8"
+  distinct_from: [lipase]
+  aliases: [amylase, serum amylase, S amylase, amylase serum]
+
+- id: lipase
+  name: Serum Lipase
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "3040-3"
+  aliases: [lipase, serum lipase, S lipase, lipase serum]
+
+- id: ldh
+  name: Lactate Dehydrogenase
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2532-0"
+  aliases: [LDH, lactate dehydrogenase, serum LDH, lactic dehydrogenase]
+
+- id: cpk_total
+  name: Creatine Phosphokinase Total
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2157-6"
+  aliases: [CPK, CK, creatine phosphokinase, CPK total, creatine kinase,
+            CPK (total), total CPK]
+
+- id: iron_studies
+  name: Iron Studies
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  is_panel: true
+  analytes: [serum_iron, tibc, transferrin_saturation, ferritin]
+  components: [serum_iron, tibc, transferrin_saturation, ferritin]
+  aliases: [iron studies, iron profile, anaemia profile iron,
+            iron panel, iron studies profile]
+
+- id: serum_iron
+  name: Serum Iron
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  loinc: "2498-4"
+  aliases: [iron, serum iron, S iron, iron serum]
+
+- id: tibc
+  name: Total Iron Binding Capacity
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  loinc: "2500-7"
+  aliases: [TIBC, total iron binding capacity, iron binding capacity,
+            UIBC TIBC]
+
+- id: transferrin_saturation
+  name: Transferrin Saturation
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  loinc: "2502-3"
+  aliases: [transferrin saturation, TSAT, percent transferrin saturation,
+            transferrin saturation percentage]
+
+- id: ferritin
+  name: Serum Ferritin
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2276-4"
+  aliases: [ferritin, serum ferritin, S ferritin, ferritin serum]

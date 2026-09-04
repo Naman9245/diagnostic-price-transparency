@@ -1,0 +1,105 @@
+# Microbiology. Culture pricing is driven by specimen type, so specimen is the
+# whole discriminator in this file - the test name is nearly identical across
+# all of them.
+
+- id: urine_culture
+  name: Urine Culture and Sensitivity
+  category: microbiology
+  kind: lab
+  specimen: urine
+  fasting_required: false
+  loinc: "630-4"
+  aliases: [urine culture, urine C/S, urine culture and sensitivity,
+            urine culture sensitivity, C&S urine, urine for culture]
+
+- id: blood_culture
+  name: Blood Culture and Sensitivity
+  category: microbiology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "600-7"
+  aliases: [blood culture, blood C/S, blood culture and sensitivity,
+            blood culture sensitivity, culture blood]
+  notes: HARD NEGATIVE vs urine_culture. Blocks on specimen alone.
+
+- id: sputum_culture
+  name: Sputum Culture and Sensitivity
+  category: microbiology
+  kind: lab
+  specimen: sputum
+  fasting_required: false
+  loinc: "624-7"
+  aliases: [sputum culture, sputum C/S, sputum culture and sensitivity,
+            culture sputum]
+
+- id: stool_culture
+  name: Stool Culture and Sensitivity
+  category: microbiology
+  kind: lab
+  specimen: stool
+  fasting_required: false
+  loinc: "625-4"
+  aliases: [stool culture, stool C/S, stool culture and sensitivity,
+            culture stool]
+
+- id: throat_swab_culture
+  name: Throat Swab Culture
+  category: microbiology
+  kind: lab
+  specimen: swab
+  fasting_required: false
+  loinc: "17898-8"
+  aliases: [throat swab culture, throat culture, throat swab C/S,
+            throat swab for culture]
+
+- id: sputum_afb
+  name: Sputum AFB Smear
+  category: microbiology
+  kind: lab
+  specimen: sputum
+  fasting_required: false
+  loinc: "11545-1"
+  aliases: [sputum AFB, AFB smear, acid fast bacilli smear,
+            sputum for AFB, AFB stain, ZN stain sputum]
+
+- id: malaria_parasite
+  name: Malaria Parasite Smear
+  category: microbiology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "32700-7"
+  distinct_from: [malaria_antigen]
+  aliases: [MP, malaria parasite, MP smear, malarial parasite,
+            smear for MP, malaria smear]
+
+- id: malaria_antigen
+  name: Malaria Antigen
+  category: microbiology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  aliases: [malaria antigen, malaria card test, MP antigen,
+            malaria rapid test, malaria antigen test]
+  notes: HARD NEGATIVE vs malaria_parasite. Antigen card, not microscopy.
+
+- id: gram_stain
+  name: Gram Stain
+  category: microbiology
+  kind: lab
+  specimen: swab
+  fasting_required: false
+  loinc: "664-3"
+  aliases: [gram stain, grams stain, gram staining,
+            gram stain examination]
+
+- id: fungal_culture
+  name: Fungal Culture
+  category: microbiology
+  kind: lab
+  specimen: tissue
+  fasting_required: false
+  loinc: "580-4"
+  aliases: [fungal culture, culture for fungus, KOH and fungal culture,
+            mycology culture]

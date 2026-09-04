@@ -1,0 +1,89 @@
+# Coagulation. PT and INR travel together in Indian rate cards and are usually
+# billed as one line, so pt_inr is the panel and the singletons stay for the
+# sources that do split them.
+
+- id: pt_inr
+  name: Prothrombin Time with INR
+  category: coagulation
+  kind: lab
+  specimen: plasma
+  fasting_required: false
+  loinc: "5902-2"
+  is_panel: true
+  analytes: [prothrombin_time, inr]
+  aliases: [PT INR, PT/INR, prothrombin time INR, PT with INR,
+            prothrombin time with INR, PT (INR), protime INR]
+
+- id: prothrombin_time
+  name: Prothrombin Time
+  category: coagulation
+  kind: lab
+  specimen: plasma
+  fasting_required: false
+  loinc: "5964-2"
+  distinct_from: [aptt]
+  aliases: [PT, prothrombin time, protime, PT test]
+
+- id: inr
+  name: International Normalised Ratio
+  category: coagulation
+  kind: lab
+  specimen: plasma
+  fasting_required: false
+  loinc: "6301-6"
+  aliases: [INR, international normalized ratio,
+            international normalised ratio]
+
+- id: aptt
+  name: Activated Partial Thromboplastin Time
+  category: coagulation
+  kind: lab
+  specimen: plasma
+  fasting_required: false
+  loinc: "14979-9"
+  aliases: [APTT, aPTT, PTTK, partial thromboplastin time,
+            activated partial thromboplastin time (APTT), KPTT]
+
+- id: fibrinogen
+  name: Fibrinogen
+  category: coagulation
+  kind: lab
+  specimen: plasma
+  fasting_required: false
+  loinc: "3255-7"
+  aliases: [fibrinogen, fibrinogen level, plasma fibrinogen,
+            fibrinogen quantitative]
+
+- id: d_dimer
+  name: D-Dimer
+  category: coagulation
+  kind: lab
+  specimen: plasma
+  fasting_required: false
+  loinc: "48065-7"
+  aliases: [D dimer, D-dimer, DD, d dimer quantitative,
+            D dimer assay, fibrin degradation product D dimer]
+  notes: >
+    The corpus contains "D DIMER CBC" as one string. It contains a CBC without
+    being one - a containment trap for any token-overlap matcher.
+
+- id: bleeding_time
+  name: Bleeding Time
+  category: coagulation
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "3013-0"
+  aliases: [BT, bleeding time, bleeding time (BT), Duke bleeding time]
+
+- id: clotting_time
+  name: Clotting Time
+  category: coagulation
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "3199-7"
+  aliases: [CT, clotting time, coagulation time, clotting time (CT)]
+  notes: >
+    "CT" also abbreviates computed tomography. Any matcher that expands
+    abbreviations without checking category will send this to imaging.

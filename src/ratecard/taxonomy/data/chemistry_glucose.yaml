@@ -1,0 +1,94 @@
+# Glucose and diabetes. Fasting state is a real discriminator here, not prep
+# trivia: fasting and post-prandial glucose are separate line items at separate
+# prices in every source checked.
+
+- id: glucose_fasting
+  name: Fasting Blood Sugar
+  category: clinical_chemistry
+  kind: lab
+  specimen: plasma
+  fasting_required: true
+  loinc: "1558-6"
+  distinct_from: [glucose_postprandial, glucose_random]
+  aliases: [FBS, fasting blood sugar, fasting blood glucose, sugar F,
+            blood sugar fasting, glucose fasting, FBG, sugar fasting,
+            plasma glucose fasting, BSF]
+
+- id: glucose_postprandial
+  name: Post Prandial Blood Sugar
+  category: clinical_chemistry
+  kind: lab
+  specimen: plasma
+  fasting_required: false
+  loinc: "1521-4"
+  distinct_from: [glucose_random]
+  aliases: [PPBS, post prandial blood sugar, sugar PP, PP blood sugar,
+            blood sugar post prandial, glucose post prandial, PPBG,
+            2 hour post prandial glucose, sugar PP 2 hrs, BSPP]
+  notes: HARD NEGATIVE vs glucose_fasting. Differs only by fasting state.
+
+- id: glucose_random
+  name: Random Blood Sugar
+  category: clinical_chemistry
+  kind: lab
+  specimen: plasma
+  fasting_required: false
+  loinc: "2345-7"
+  aliases: [RBS, random blood sugar, random blood glucose, sugar random,
+            blood sugar random, RBG, casual blood glucose]
+
+- id: glucose_tolerance_test
+  name: Oral Glucose Tolerance Test
+  category: clinical_chemistry
+  kind: lab
+  specimen: plasma
+  fasting_required: true
+  loinc: "20438-8"
+  is_panel: true
+  analytes: [glucose_0h, glucose_1h, glucose_2h]
+  components: [glucose_fasting]
+  aliases: [GTT, OGTT, glucose tolerance test, oral glucose tolerance test,
+            GCT, glucose challenge test, GTT 75 gm, sugar tolerance test]
+
+- id: hba1c
+  name: Glycated Haemoglobin
+  category: clinical_chemistry
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "4548-4"
+  aliases: [HbA1c, HBA1C, glycosylated haemoglobin, glycated hemoglobin,
+            HbA1c (glycosylated haemoglobin), A1C, glyco Hb,
+            haemoglobin A1c, glycosylated hemoglobin HbA1c]
+
+- id: insulin_fasting
+  name: Fasting Insulin
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  loinc: "20448-7"
+  aliases: [fasting insulin, insulin fasting, serum insulin fasting,
+            insulin F]
+
+- id: c_peptide
+  name: C-Peptide
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  loinc: "1986-9"
+  aliases: [C peptide, c-peptide, serum c peptide, C peptide fasting]
+
+- id: microalbumin_urine
+  name: Urine Microalbumin
+  category: clinical_chemistry
+  kind: lab
+  specimen: urine
+  fasting_required: false
+  loinc: "14957-5"
+  aliases: [microalbumin, urine microalbumin, microalbuminuria,
+            urinary microalbumin, micro albumin urine]
+  notes: >
+    Specimen is urine. Any match to serum albumin must be blocked on specimen
+    regardless of how high the string similarity runs.

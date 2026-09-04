@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ratecard"
+version = "0.1.0"
+description = "Bengaluru Rate Card - hyperlocal diagnostic price transparency"
+requires-python = ">=3.11"
+
+# Phase 01 deliberately runs on stdlib + PyYAML alone, so the taxonomy can be
+# validated on a bare machine with no venv. Heavier stages opt in below.
+dependencies = ["pyyaml>=6.0"]
+
+[project.optional-dependencies]
+# Stage 4, Phase 02. The matcher.
+normalise = ["rapidfuzz>=3.6", "sentence-transformers>=3.0"]
+# Stages 2-3, Phase 04. Fetch and parse.
+pipeline = ["httpx>=0.27", "pdfplumber>=0.11", "selectolax>=0.3", "pypdf>=4.0"]
+# Stages 5-6, Phases 05-06.
+serve = ["fastapi>=0.115", "uvicorn>=0.30", "psycopg[binary]>=3.2", "geoalchemy2>=0.15"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[project.scripts]
+ratecard = "ratecard.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"ratecard.taxonomy" = ["data/*.yaml"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

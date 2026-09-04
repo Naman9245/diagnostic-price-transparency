@@ -1,0 +1,80 @@
+# Urine, stool and semen. Every entry here blocks against its serum namesake
+# on specimen.
+
+- id: urine_routine
+  name: Urine Routine and Microscopy
+  category: urinalysis
+  kind: lab
+  specimen: urine
+  fasting_required: false
+  loinc: "24357-6"
+  is_panel: true
+  analytes: [colour, appearance, ph, specific_gravity, protein, glucose,
+             ketones, bilirubin, urobilinogen, blood, microscopy_deposits]
+  aliases: [urine routine, urine R/M, urine routine and microscopy,
+            CUE, complete urine examination, urine analysis, urinalysis,
+            urine routine microscopy, urine complete examination,
+            urine R and M]
+  notes: >
+    Rs 290 in the Narayana OPD tier. One of the highest-volume rows in the
+    corpus and written a dozen different ways.
+
+- id: urine_pregnancy_test
+  name: Urine Pregnancy Test
+  category: urinalysis
+  kind: lab
+  specimen: urine
+  fasting_required: false
+  loinc: "2106-3"
+  aliases: [UPT, urine pregnancy test, pregnancy test urine,
+            urine for HCG, pregnancy card test]
+
+- id: urine_protein_24h
+  name: 24 Hour Urine Protein
+  category: urinalysis
+  kind: lab
+  specimen: urine_24h
+  fasting_required: false
+  loinc: "2889-4"
+  aliases: [24 hour urine protein, urine protein 24 hours,
+            24 hr urinary protein, total protein 24 hour urine]
+
+- id: urine_protein_creatinine_ratio
+  name: Urine Protein Creatinine Ratio
+  category: urinalysis
+  kind: lab
+  specimen: urine
+  fasting_required: false
+  loinc: "2890-2"
+  aliases: [UPCR, urine protein creatinine ratio,
+            protein creatinine ratio, PCR urine]
+
+- id: stool_routine
+  name: Stool Routine Examination
+  category: urinalysis
+  kind: lab
+  specimen: stool
+  fasting_required: false
+  aliases: [stool routine, stool R/M, stool examination,
+            stool routine and microscopy, stool analysis,
+            stool for routine examination]
+
+- id: stool_occult_blood
+  name: Stool Occult Blood
+  category: urinalysis
+  kind: lab
+  specimen: stool
+  fasting_required: false
+  loinc: "2335-8"
+  aliases: [stool occult blood, occult blood, FOBT,
+            faecal occult blood, stool for occult blood]
+
+- id: semen_analysis
+  name: Semen Analysis
+  category: urinalysis
+  kind: lab
+  specimen: semen
+  fasting_required: false
+  loinc: "29769-7"
+  aliases: [semen analysis, seminal fluid analysis, sperm count,
+            semen examination, SFA]
