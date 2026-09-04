@@ -1,0 +1,207 @@
+# Serology and infectious disease. Heavy on Indian-specific tests (Widal,
+# Typhidot, dengue panels) that no public vocabulary covers, which is why the
+# aliases here are hand-curated rather than seeded.
+
+- id: crp
+  name: C-Reactive Protein
+  category: immunology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "1988-5"
+  distinct_from: [crp_hs]
+  aliases: [CRP, C reactive protein, C-reactive protein, serum CRP,
+            CRP quantitative]
+
+- id: crp_hs
+  name: High Sensitivity CRP
+  category: immunology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "30522-7"
+  aliases: [hs-CRP, hsCRP, high sensitivity CRP, ultra sensitive CRP,
+            high sensitive C reactive protein]
+  notes: HARD NEGATIVE vs crp. Different assay, different indication, higher price.
+
+- id: rheumatoid_factor
+  name: Rheumatoid Factor
+  category: immunology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "11572-5"
+  aliases: [RA factor, rheumatoid factor, RF, RA test,
+            rheumatoid arthritis factor, RA factor quantitative]
+
+- id: aso_titre
+  name: ASO Titre
+  category: immunology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  aliases: [ASO, ASO titre, anti streptolysin O, ASO titer,
+            antistreptolysin O]
+
+- id: ana
+  name: Antinuclear Antibody
+  category: immunology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "8061-8"
+  aliases: [ANA, antinuclear antibody, ANA IF, anti nuclear antibody,
+            ANA by IFA]
+
+- id: hiv_screen
+  name: HIV I and II Antibody
+  category: serology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  aliases: [HIV, HIV I and II, HIV 1 and 2, HIV screening,
+            HIV antibody, HIV I & II antibody, anti HIV]
+
+- id: hbsag
+  name: Hepatitis B Surface Antigen
+  category: serology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "5196-1"
+  aliases: [HBsAg, hepatitis B surface antigen, Australia antigen,
+            HBS antigen, HBsAg screening]
+
+- id: anti_hcv
+  name: Hepatitis C Antibody
+  category: serology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "16128-1"
+  aliases: [anti HCV, HCV antibody, hepatitis C antibody, HCV,
+            anti-HCV antibody]
+
+- id: vdrl
+  name: VDRL
+  category: serology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "20507-0"
+  aliases: [VDRL, RPR, syphilis serology, VDRL test,
+            rapid plasma reagin]
+
+- id: widal
+  name: Widal Test
+  category: serology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  distinct_from: [typhidot]
+  aliases: [widal, widal test, widal slide, typhoid widal,
+            widal agglutination test]
+
+- id: typhidot
+  name: Typhidot IgM and IgG
+  category: serology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  aliases: [typhidot, typhidot IgM, typhi dot, typhidot IgM and IgG,
+            salmonella typhi IgM]
+  notes: HARD NEGATIVE vs widal. Same disease, different assay, different price.
+
+- id: dengue_ns1
+  name: Dengue NS1 Antigen
+  category: serology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  distinct_from: [dengue_igm_igg]
+  aliases: [dengue NS1, NS1 antigen, dengue NS1 antigen,
+            dengue antigen NS1, NS1]
+
+- id: dengue_igm_igg
+  name: Dengue IgM and IgG Antibody
+  category: serology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  aliases: [dengue IgM IgG, dengue antibody, dengue IgM and IgG,
+            dengue serology, dengue IgG IgM antibody]
+  notes: HARD NEGATIVE vs dengue_ns1 and dengue_panel.
+
+- id: dengue_panel
+  name: Dengue Panel
+  category: serology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  is_panel: true
+  analytes: [dengue_ns1, dengue_igm, dengue_igg]
+  components: [dengue_ns1, dengue_igm_igg]
+  aliases: [dengue panel, dengue profile, dengue NS1 IgM IgG,
+            dengue complete panel, dengue full panel]
+
+- id: chikungunya_igm
+  name: Chikungunya IgM
+  category: serology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  aliases: [chikungunya IgM, chikungunya antibody, chikungunya serology,
+            anti chikungunya IgM]
+
+- id: covid_rtpcr
+  name: COVID-19 RT-PCR
+  category: molecular
+  kind: lab
+  specimen: swab
+  fasting_required: false
+  loinc: "94500-6"
+  aliases: [COVID RT PCR, RT-PCR covid, SARS CoV 2 RT PCR,
+            covid 19 RT PCR, corona RT PCR, COVID-19 RTPCR]
+
+- id: covid_antibody
+  name: COVID-19 Antibody
+  category: serology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  aliases: [covid antibody, SARS CoV 2 antibody, covid IgG,
+            covid 19 antibody, anti SARS CoV 2 antibody]
+
+- id: hepatitis_b_profile
+  name: Hepatitis B Profile
+  category: serology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  is_panel: true
+  analytes: [hbsag, anti_hbs, hbeag, anti_hbe, anti_hbc]
+  components: [hbsag]
+  aliases: [hepatitis B profile, HBV profile, hepatitis B panel,
+            hepatitis profile B]
+
+- id: torch_panel
+  name: TORCH Panel
+  category: serology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  is_panel: true
+  analytes: [toxoplasma_igg, toxoplasma_igm, rubella_igg, rubella_igm,
+             cmv_igg, cmv_igm, hsv_igg, hsv_igm]
+  aliases: [TORCH, TORCH panel, TORCH profile, TORCH 10,
+            TORCH IgG IgM panel]
+
+- id: procalcitonin
+  name: Procalcitonin
+  category: immunology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "33959-8"
+  aliases: [procalcitonin, PCT, serum procalcitonin,
+            procalcitonin quantitative]

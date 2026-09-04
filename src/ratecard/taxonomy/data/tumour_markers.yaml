@@ -1,0 +1,67 @@
+# Tumour markers.
+
+- id: psa_total
+  name: Total PSA
+  category: tumour_markers
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2857-1"
+  distinct_from: [psa_free]
+  aliases: [PSA, total PSA, prostate specific antigen, PSA total,
+            serum PSA]
+
+- id: psa_free
+  name: Free PSA
+  category: tumour_markers
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2858-9"
+  aliases: [free PSA, PSA free, free prostate specific antigen, fPSA]
+  notes: HARD NEGATIVE vs psa_total.
+
+- id: cea
+  name: Carcinoembryonic Antigen
+  category: tumour_markers
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2039-6"
+  aliases: [CEA, carcinoembryonic antigen, serum CEA]
+
+- id: ca_125
+  name: CA 125
+  category: tumour_markers
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "10334-1"
+  aliases: [CA 125, CA-125, cancer antigen 125, CA125]
+
+- id: ca_19_9
+  name: CA 19-9
+  category: tumour_markers
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "24108-3"
+  aliases: [CA 19 9, CA 19-9, cancer antigen 19 9, CA19-9]
+
+- id: ca_15_3
+  name: CA 15-3
+  category: tumour_markers
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "6875-9"
+  aliases: [CA 15 3, CA 15-3, cancer antigen 15 3, CA15-3]
+
+- id: afp
+  name: Alpha Fetoprotein
+  category: tumour_markers
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "1834-1"
+  aliases: [AFP, alpha fetoprotein, alpha feto protein, serum AFP]

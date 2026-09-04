@@ -1,0 +1,241 @@
+# Endocrinology. The two thyroid panels below carry the same analyte count and
+# different analytes, which is why the rule layer compares component sets and
+# not just analyte_count.
+
+- id: thyroid_profile
+  name: Thyroid Profile
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  is_panel: true
+  analytes: [t3_total, t4_total, tsh]
+  components: [t3_total, t4_total, tsh]
+  aliases: [thyroid profile, TFT, thyroid function test, T3 T4 TSH,
+            thyroid profile total, thyroid function tests,
+            total thyroid profile, thyroid profile (T3 T4 TSH)]
+
+- id: thyroid_profile_free
+  name: Free Thyroid Profile
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  is_panel: true
+  analytes: [t3_free, t4_free, tsh]
+  components: [t3_free, t4_free, tsh]
+  aliases: [free thyroid profile, FT3 FT4 TSH, thyroid profile free,
+            free T3 free T4 TSH, thyroid profile (free)]
+  notes: >
+    HARD NEGATIVE vs thyroid_profile. Same analyte count, different analytes,
+    routinely priced higher. Token overlap with the total panel is near-total.
+
+- id: tsh
+  name: Thyroid Stimulating Hormone
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "3016-3"
+  aliases: [TSH, thyroid stimulating hormone, TSH ultrasensitive,
+            TSH (thyroid stimulating hormone), ultrasensitive TSH,
+            S TSH, thyrotropin]
+
+- id: t3_total
+  name: Total T3
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "3053-6"
+  distinct_from: [t3_free]
+  aliases: [T3, total T3, T3 total, triiodothyronine,
+            total triiodothyronine]
+
+- id: t4_total
+  name: Total T4
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "3026-2"
+  distinct_from: [t4_free]
+  aliases: [T4, total T4, T4 total, thyroxine, total thyroxine]
+
+- id: t3_free
+  name: Free T3
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "3051-0"
+  aliases: [FT3, free T3, T3 free, free triiodothyronine]
+
+- id: t4_free
+  name: Free T4
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "3024-7"
+  aliases: [FT4, free T4, T4 free, free thyroxine]
+
+- id: anti_tpo
+  name: Anti-TPO Antibody
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "8099-8"
+  distinct_from: [anti_thyroglobulin]
+  aliases: [anti TPO, anti-TPO, TPO antibody, thyroid peroxidase antibody,
+            anti thyroid peroxidase, ATPO, anti TPO antibody]
+
+- id: anti_thyroglobulin
+  name: Anti-Thyroglobulin Antibody
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "8098-0"
+  aliases: [anti TG, anti thyroglobulin, thyroglobulin antibody,
+            ATG antibody, anti thyroglobulin antibody]
+
+- id: prolactin
+  name: Prolactin
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2842-3"
+  aliases: [prolactin, PRL, serum prolactin, prolactin level]
+
+- id: lh
+  name: Luteinising Hormone
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "10501-5"
+  distinct_from: [fsh]
+  aliases: [LH, luteinizing hormone, luteinising hormone, serum LH]
+
+- id: fsh
+  name: Follicle Stimulating Hormone
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "15067-2"
+  aliases: [FSH, follicle stimulating hormone, serum FSH]
+
+- id: lh_fsh_prolactin
+  name: LH FSH Prolactin Panel
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  is_panel: true
+  analytes: [lh, fsh, prolactin]
+  components: [lh, fsh, prolactin]
+  aliases: [LH FSH prolactin, fertility hormone profile,
+            LH FSH PRL, hormone profile LH FSH prolactin]
+
+- id: testosterone_total
+  name: Total Testosterone
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2986-8"
+  distinct_from: [testosterone_free]
+  aliases: [testosterone, total testosterone, testosterone total,
+            serum testosterone]
+
+- id: testosterone_free
+  name: Free Testosterone
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2991-8"
+  aliases: [free testosterone, testosterone free, FT]
+  notes: HARD NEGATIVE vs testosterone_total.
+
+- id: estradiol
+  name: Estradiol
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2243-4"
+  aliases: [estradiol, oestradiol, E2, serum estradiol, estradiol E2]
+
+- id: progesterone
+  name: Progesterone
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2839-9"
+  aliases: [progesterone, serum progesterone, P4, progesterone level]
+
+- id: cortisol
+  name: Serum Cortisol
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2143-6"
+  aliases: [cortisol, serum cortisol, cortisol AM, morning cortisol,
+            cortisol 8 am, plasma cortisol]
+
+- id: parathyroid_hormone
+  name: Parathyroid Hormone
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2731-8"
+  aliases: [PTH, parathyroid hormone, intact PTH, iPTH,
+            parathormone, PTH intact]
+
+- id: amh
+  name: Anti-Mullerian Hormone
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "38476-0"
+  aliases: [AMH, anti mullerian hormone, anti-Mullerian hormone,
+            serum AMH]
+
+- id: beta_hcg
+  name: Beta HCG
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "19080-1"
+  aliases: [beta HCG, B HCG, beta human chorionic gonadotropin,
+            serum beta HCG, HCG quantitative, beta HCG quantitative]
+
+- id: dheas
+  name: DHEA Sulphate
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2191-5"
+  aliases: [DHEAS, DHEA sulphate, DHEA-S, dehydroepiandrosterone sulfate,
+            DHEA sulfate]
+
+- id: growth_hormone
+  name: Growth Hormone
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  loinc: "2963-7"
+  aliases: [growth hormone, GH, HGH, human growth hormone,
+            somatotropin]

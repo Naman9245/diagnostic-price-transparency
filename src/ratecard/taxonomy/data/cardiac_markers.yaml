@@ -1,0 +1,57 @@
+# Cardiac markers.
+
+- id: troponin_i
+  name: Troponin I
+  category: cardiac_markers
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "10839-9"
+  distinct_from: [troponin_t]
+  aliases: [troponin I, Trop I, cardiac troponin I, cTnI,
+            troponin I quantitative]
+
+- id: troponin_t
+  name: Troponin T
+  category: cardiac_markers
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "6598-7"
+  aliases: [troponin T, Trop T, cardiac troponin T, cTnT,
+            troponin T quantitative]
+  notes: >
+    HARD NEGATIVE vs troponin_i. Single character apart, different assay,
+    routinely different price. A pure edit-distance matcher merges these.
+
+- id: ck_mb
+  name: CK-MB
+  category: cardiac_markers
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "13969-1"
+  distinct_from: [cpk_total]
+  aliases: [CKMB, CK-MB, CPK MB, creatine kinase MB, CK MB mass,
+            CPK-MB]
+  notes: HARD NEGATIVE vs cpk_total.
+
+- id: nt_probnp
+  name: NT-proBNP
+  category: cardiac_markers
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "33762-6"
+  aliases: [NT proBNP, NT-proBNP, pro BNP, BNP, N terminal pro BNP,
+            proBNP]
+
+- id: homocysteine
+  name: Homocysteine
+  category: cardiac_markers
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  loinc: "13965-9"
+  aliases: [homocysteine, serum homocysteine, HCY,
+            homocysteine quantitative]

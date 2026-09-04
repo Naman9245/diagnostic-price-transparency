@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Immutable raw store: hashed source documents, never committed.
+data/raw/*
+!data/raw/.gitkeep
+data/interim/*
+!data/interim/.gitkeep
+
+# Phase 00 corpus is regenerable from the registry; keep it out of git.
+data/corpus/*
+!data/corpus/.gitkeep
+
+.env

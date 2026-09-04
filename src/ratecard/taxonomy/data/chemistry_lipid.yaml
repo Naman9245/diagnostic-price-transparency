@@ -1,0 +1,135 @@
+# Lipids. The census found five surface variants of "lipid profile" across
+# three sources. Three are modelled here by analyte count; the remaining two
+# ("complete", "comprehensive") are deliberately left unaliased because their
+# analyte lists differ per source. The matcher should abstain on them and let
+# Phase 04 resolve each source individually.
+
+- id: lipid_screen
+  name: Lipid Screen
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  is_panel: true
+  analytes: [cholesterol_total, triglycerides, hdl_cholesterol]
+  components: [cholesterol_total, triglycerides, hdl_cholesterol]
+  aliases: [lipid screen, lipid profile basic, basic lipid profile,
+            lipid profile mini, mini lipid profile]
+  notes: Three analytes. HARD NEGATIVE vs lipid_profile and lipid_profile_extended.
+
+- id: lipid_profile
+  name: Lipid Profile
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  is_panel: true
+  analytes: [cholesterol_total, triglycerides, hdl_cholesterol,
+             ldl_cholesterol, vldl_cholesterol]
+  components: [cholesterol_total, triglycerides, hdl_cholesterol,
+               ldl_cholesterol, vldl_cholesterol]
+  aliases: [lipid profile, lipid panel, LIPID PROFILE (CHOL TRIG),
+            serum lipid profile, lipid profile standard, fasting lipid profile]
+  notes: >
+    Five analytes - the default reading of an unqualified "lipid profile".
+    Priced Rs 2,110 at Narayana OPD tier against Rs 449 at a lab chain, which
+    is the single clearest illustration of the gap this product exists to show.
+
+- id: lipid_profile_extended
+  name: Lipid Profile Extended
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  is_panel: true
+  analytes: [cholesterol_total, triglycerides, hdl_cholesterol,
+             ldl_cholesterol, vldl_cholesterol, non_hdl_cholesterol,
+             apolipoprotein_a1, apolipoprotein_b, lipoprotein_a]
+  components: [cholesterol_total, triglycerides, hdl_cholesterol,
+               ldl_cholesterol, vldl_cholesterol, apolipoprotein_a1,
+               apolipoprotein_b, lipoprotein_a]
+  aliases: [lipid profile extended, extended lipid profile,
+            lipid profile advanced, advanced lipid profile,
+            lipid profile with apolipoprotein]
+  notes: >
+    Nine analytes. Differs from lipid_profile by one word and roughly double
+    the price. This is the panel-size trap the analyte_count field exists for.
+
+- id: cholesterol_total
+  name: Total Cholesterol
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  loinc: "2093-3"
+  distinct_from: [hdl_cholesterol, ldl_cholesterol]
+  aliases: [cholesterol, total cholesterol, serum cholesterol,
+            cholesterol total, S cholesterol, cholesterol (total)]
+  notes: Verified at Rs 170 in Bengaluru on a public per-city lab-chain page.
+
+- id: triglycerides
+  name: Triglycerides
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  loinc: "2571-8"
+  aliases: [TG, triglycerides, serum triglycerides, triglyceride,
+            TGL, trig]
+
+- id: hdl_cholesterol
+  name: HDL Cholesterol
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  loinc: "2085-9"
+  aliases: [HDL, HDL cholesterol, high density lipoprotein,
+            HDL-C, cholesterol HDL, direct HDL]
+
+- id: ldl_cholesterol
+  name: LDL Cholesterol
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  loinc: "13457-7"
+  distinct_from: [vldl_cholesterol]
+  aliases: [LDL, LDL cholesterol, low density lipoprotein, LDL-C,
+            cholesterol LDL, direct LDL]
+
+- id: vldl_cholesterol
+  name: VLDL Cholesterol
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  loinc: "13458-5"
+  aliases: [VLDL, VLDL cholesterol, very low density lipoprotein, VLDL-C]
+
+- id: apolipoprotein_a1
+  name: Apolipoprotein A1
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  loinc: "1869-7"
+  aliases: [Apo A1, apolipoprotein A1, apo A-1, apolipoprotein A]
+
+- id: apolipoprotein_b
+  name: Apolipoprotein B
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  loinc: "1884-6"
+  aliases: [Apo B, apolipoprotein B, apo-B, apolipoprotein B100]
+
+- id: lipoprotein_a
+  name: Lipoprotein (a)
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  loinc: "10835-7"
+  aliases: [Lp(a), lipoprotein a, LPA, lipoprotein little a]

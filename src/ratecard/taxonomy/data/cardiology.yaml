@@ -1,0 +1,50 @@
+# Functional cardiac and pulmonary studies. Modality-bearing, so they live
+# under kind: imaging even though nobody calls an ECG an image.
+
+- id: ecg
+  name: Electrocardiogram
+  category: cardiology
+  kind: imaging
+  modality: ecg
+  body_region: heart
+  distinct_from: [holter_monitoring]
+  aliases: [ECG, EKG, electrocardiogram, ECG 12 lead,
+            12 lead ECG, electro cardiogram]
+
+- id: echocardiography
+  name: 2D Echocardiography
+  category: cardiology
+  kind: imaging
+  modality: echocardiography
+  body_region: heart
+  aliases: [2D echo, echocardiography, echo, 2D echocardiography,
+            echo cardiography, 2D echo with colour doppler,
+            transthoracic echocardiography, TTE]
+
+- id: tmt
+  name: Treadmill Test
+  category: cardiology
+  kind: imaging
+  modality: stress_test
+  body_region: heart
+  aliases: [TMT, treadmill test, stress test, exercise stress test,
+            treadmill stress test, TMT test]
+
+- id: holter_monitoring
+  name: Holter Monitoring
+  category: cardiology
+  kind: imaging
+  modality: ecg
+  body_region: heart
+  aliases: [holter, holter monitoring, 24 hour holter,
+            ambulatory ECG, holter monitor test]
+  notes: HARD NEGATIVE vs ecg. Same modality, very different price.
+
+- id: pulmonary_function_test
+  name: Pulmonary Function Test
+  category: cardiology
+  kind: imaging
+  modality: pft
+  body_region: lungs
+  aliases: [PFT, pulmonary function test, spirometry,
+            lung function test, PFT spirometry]

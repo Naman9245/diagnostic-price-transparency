@@ -1,0 +1,113 @@
+# Liver. LFT is the second-most-quoted panel in Indian rate cards after CBC and
+# its analyte list is stable across sources, unlike the lipid panels.
+
+- id: lft
+  name: Liver Function Test
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  is_panel: true
+  analytes: [bilirubin_total, bilirubin_direct, bilirubin_indirect,
+             sgot_ast, sgpt_alt, alkaline_phosphatase, total_protein,
+             albumin, globulin, ag_ratio]
+  components: [bilirubin_total, bilirubin_direct, sgot_ast, sgpt_alt,
+               alkaline_phosphatase, total_protein, albumin]
+  aliases: [LFT, liver function test, liver profile, LFT (liver function test),
+            liver function tests, hepatic function panel, liver panel,
+            liver function test (LFT)]
+
+- id: bilirubin_total
+  name: Total Bilirubin
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "1975-2"
+  aliases: [bilirubin total, total bilirubin, serum bilirubin total,
+            S bilirubin total, bilirubin (total)]
+
+- id: bilirubin_direct
+  name: Direct Bilirubin
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "1968-7"
+  distinct_from: [bilirubin_indirect]
+  aliases: [bilirubin direct, direct bilirubin, conjugated bilirubin,
+            serum bilirubin direct, bilirubin (direct)]
+
+- id: bilirubin_indirect
+  name: Indirect Bilirubin
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "1971-1"
+  aliases: [bilirubin indirect, indirect bilirubin, unconjugated bilirubin,
+            serum bilirubin indirect]
+
+- id: sgpt_alt
+  name: SGPT (ALT)
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "1742-6"
+  distinct_from: [sgot_ast]
+  aliases: [SGPT, ALT, SGPT (ALT), alanine aminotransferase, serum SGPT,
+            ALT (SGPT), alanine transaminase, SGPT ALT]
+
+- id: sgot_ast
+  name: SGOT (AST)
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "1920-8"
+  aliases: [SGOT, AST, SGOT (AST), aspartate aminotransferase, serum SGOT,
+            AST (SGOT), aspartate transaminase, SGOT AST]
+  notes: HARD NEGATIVE vs sgpt_alt. One character apart in the common abbreviation.
+
+- id: alkaline_phosphatase
+  name: Alkaline Phosphatase
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "6768-6"
+  aliases: [ALP, alkaline phosphatase, serum alkaline phosphatase,
+            alk phos, alkaline phosphatase (ALP), SAP]
+
+- id: ggt
+  name: Gamma Glutamyl Transferase
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2324-2"
+  aliases: [GGT, GGTP, gamma glutamyl transferase,
+            gamma GT, gamma glutamyl transpeptidase]
+
+- id: total_protein
+  name: Total Protein
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2885-2"
+  aliases: [total protein, serum total protein, protein total,
+            TP, S total protein]
+
+- id: albumin
+  name: Serum Albumin
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "1751-7"
+  aliases: [albumin, serum albumin, S albumin, albumin serum]
+  notes: >
+    HARD NEGATIVE vs microalbumin_urine. Different specimen, different
+    indication, and the string "albumin" is contained in both.

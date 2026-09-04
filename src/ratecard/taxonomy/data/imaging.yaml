@@ -1,0 +1,287 @@
+# Imaging. The discriminators here are structural, not lexical: view count for
+# radiography, contrast for cross-sectional studies, body region everywhere.
+# LOINC is deliberately null across this file - radiology LOINC codes were not
+# verified against loinc.org and a guessed code is worse than an absent one.
+
+# --- radiography -----------------------------------------------------------
+
+- id: xray_chest_pa
+  name: X-Ray Chest PA View
+  category: imaging
+  kind: imaging
+  modality: radiography
+  body_region: chest
+  views: 1
+  aliases: [chest X ray, X ray chest PA, CXR, chest radiograph,
+            X-ray chest PA view, xray chest, chest X ray PA view,
+            X ray chest single view]
+  notes: >
+    HARD NEGATIVE vs xray_chest_pa_lateral. One extra projection, materially
+    higher price, and the words "chest x ray" are common to both.
+
+- id: xray_chest_pa_lateral
+  name: X-Ray Chest PA and Lateral
+  category: imaging
+  kind: imaging
+  modality: radiography
+  body_region: chest
+  views: 2
+  aliases: [X ray chest PA and lateral, chest X ray two views,
+            CXR PA and lateral, X ray chest both views,
+            chest radiograph PA and lateral]
+
+- id: xray_abdomen_erect
+  name: X-Ray Abdomen Erect
+  category: imaging
+  kind: imaging
+  modality: radiography
+  body_region: abdomen
+  views: 1
+  aliases: [X ray abdomen erect, abdomen erect X ray, AXR erect,
+            plain X ray abdomen erect, X ray abdomen standing]
+
+- id: xray_lumbar_spine
+  name: X-Ray Lumbar Spine
+  category: imaging
+  kind: imaging
+  modality: radiography
+  body_region: lumbar_spine
+  views: 2
+  distinct_from: [xray_cervical_spine]
+  aliases: [X ray lumbar spine, LS spine X ray, lumbosacral spine X ray,
+            X ray LS spine AP and lateral, X ray lumbar spine two views]
+
+- id: xray_cervical_spine
+  name: X-Ray Cervical Spine
+  category: imaging
+  kind: imaging
+  modality: radiography
+  body_region: cervical_spine
+  views: 2
+  aliases: [X ray cervical spine, cervical spine X ray,
+            X ray C spine, X ray neck AP and lateral]
+
+- id: xray_knee
+  name: X-Ray Knee
+  category: imaging
+  kind: imaging
+  modality: radiography
+  body_region: knee
+  views: 2
+  aliases: [X ray knee, knee X ray, X ray knee AP and lateral,
+            X ray knee joint, knee radiograph]
+
+# --- ultrasound ------------------------------------------------------------
+
+- id: usg_abdomen
+  name: Ultrasound Abdomen
+  category: imaging
+  kind: imaging
+  modality: ultrasound
+  body_region: abdomen
+  distinct_from: [usg_abdomen_pelvis]
+  aliases: [USG abdomen, ultrasound abdomen, sonography abdomen,
+            USG whole abdomen, ultrasonography abdomen, US abdomen]
+  notes: HARD NEGATIVE vs usg_abdomen_pelvis. Differs by one appended word.
+
+- id: usg_abdomen_pelvis
+  name: Ultrasound Abdomen and Pelvis
+  category: imaging
+  kind: imaging
+  modality: ultrasound
+  body_region: abdomen_pelvis
+  aliases: [USG abdomen and pelvis, ultrasound abdomen and pelvis,
+            USG whole abdomen and pelvis, sonography abdomen pelvis,
+            USG abdomen pelvis]
+
+- id: usg_pelvis
+  name: Ultrasound Pelvis
+  category: imaging
+  kind: imaging
+  modality: ultrasound
+  body_region: pelvis
+  distinct_from: [usg_abdomen_pelvis]
+  aliases: [USG pelvis, ultrasound pelvis, sonography pelvis,
+            pelvic ultrasound]
+
+- id: usg_kub
+  name: Ultrasound KUB
+  category: imaging
+  kind: imaging
+  modality: ultrasound
+  body_region: kub
+  aliases: [USG KUB, ultrasound KUB, USG kidney ureter bladder,
+            ultrasound kidney ureter bladder, KUB ultrasound]
+
+- id: usg_obstetric
+  name: Obstetric Ultrasound
+  category: imaging
+  kind: imaging
+  modality: ultrasound
+  body_region: obstetric
+  aliases: [obstetric ultrasound, USG obstetric, antenatal scan,
+            USG pregnancy, obstetric scan, ANC scan]
+
+- id: usg_neck
+  name: Ultrasound Neck and Thyroid
+  category: imaging
+  kind: imaging
+  modality: ultrasound
+  body_region: neck
+  aliases: [USG neck, ultrasound neck, USG thyroid, ultrasound thyroid,
+            sonography neck, USG neck and thyroid]
+
+- id: usg_breast
+  name: Ultrasound Breast
+  category: imaging
+  kind: imaging
+  modality: ultrasound
+  body_region: breast
+  aliases: [USG breast, ultrasound breast, breast sonography,
+            sonomammography]
+
+- id: usg_scrotum
+  name: Ultrasound Scrotum
+  category: imaging
+  kind: imaging
+  modality: ultrasound
+  body_region: scrotum
+  aliases: [USG scrotum, ultrasound scrotum, scrotal ultrasound,
+            USG testis]
+
+- id: doppler_venous_lower_limb
+  name: Venous Doppler Lower Limb
+  category: imaging
+  kind: imaging
+  modality: doppler
+  body_region: lower_limb
+  aliases: [venous doppler lower limb, doppler lower limb venous,
+            lower limb venous doppler, DVT doppler,
+            colour doppler venous lower limb]
+
+- id: doppler_carotid
+  name: Carotid Doppler
+  category: imaging
+  kind: imaging
+  modality: doppler
+  body_region: carotid
+  aliases: [carotid doppler, doppler carotid, carotid duplex,
+            colour doppler carotid artery]
+
+# --- computed tomography ---------------------------------------------------
+
+- id: ct_brain_plain
+  name: CT Brain Plain
+  category: imaging
+  kind: imaging
+  modality: ct
+  body_region: brain
+  contrast: false
+  aliases: [CT brain plain, plain CT brain, NCCT head, CT head plain,
+            non contrast CT brain, NCCT brain]
+  notes: HARD NEGATIVE vs ct_brain_contrast. Contrast roughly doubles the price.
+
+- id: ct_brain_contrast
+  name: CT Brain with Contrast
+  category: imaging
+  kind: imaging
+  modality: ct
+  body_region: brain
+  contrast: true
+  aliases: [CT brain with contrast, CECT brain, contrast CT brain,
+            CT head with contrast, CECT head]
+
+- id: ct_chest_plain
+  name: CT Chest Plain
+  category: imaging
+  kind: imaging
+  modality: ct
+  body_region: chest
+  contrast: false
+  distinct_from: [hrct_chest]
+  aliases: [CT chest plain, plain CT chest, NCCT chest,
+            CT thorax plain]
+
+- id: hrct_chest
+  name: HRCT Chest
+  category: imaging
+  kind: imaging
+  modality: ct
+  body_region: chest
+  contrast: false
+  aliases: [HRCT chest, high resolution CT chest, HRCT thorax,
+            HRCT lung]
+  notes: HARD NEGATIVE vs ct_chest_plain. Different protocol, priced separately.
+
+- id: ct_abdomen_pelvis_contrast
+  name: CT Abdomen and Pelvis with Contrast
+  category: imaging
+  kind: imaging
+  modality: ct
+  body_region: abdomen_pelvis
+  contrast: true
+  aliases: [CECT abdomen and pelvis, CT abdomen pelvis with contrast,
+            contrast CT abdomen and pelvis, CECT abdomen pelvis]
+
+# --- magnetic resonance ----------------------------------------------------
+
+- id: mri_brain_plain
+  name: MRI Brain Plain
+  category: imaging
+  kind: imaging
+  modality: mri
+  body_region: brain
+  contrast: false
+  aliases: [MRI brain plain, plain MRI brain, MRI head plain,
+            MRI brain without contrast]
+
+- id: mri_brain_contrast
+  name: MRI Brain with Contrast
+  category: imaging
+  kind: imaging
+  modality: mri
+  body_region: brain
+  contrast: true
+  aliases: [MRI brain with contrast, contrast MRI brain,
+            MRI brain with gadolinium, MRI head with contrast]
+
+- id: mri_lumbar_spine
+  name: MRI Lumbar Spine
+  category: imaging
+  kind: imaging
+  modality: mri
+  body_region: lumbar_spine
+  contrast: false
+  distinct_from: [xray_lumbar_spine]
+  aliases: [MRI lumbar spine, MRI LS spine, MRI lumbosacral spine,
+            MRI lower back]
+
+- id: mri_knee
+  name: MRI Knee
+  category: imaging
+  kind: imaging
+  modality: mri
+  body_region: knee
+  contrast: false
+  aliases: [MRI knee, MRI knee joint, MRI knee plain]
+
+# --- other -----------------------------------------------------------------
+
+- id: mammography
+  name: Mammography Bilateral
+  category: imaging
+  kind: imaging
+  modality: mammography
+  body_region: breast
+  views: 4
+  aliases: [mammography, mammogram, bilateral mammography,
+            digital mammography, mammogram bilateral]
+
+- id: dexa_scan
+  name: DEXA Bone Densitometry
+  category: imaging
+  kind: imaging
+  modality: dexa
+  body_region: spine_hip
+  aliases: [DEXA scan, bone densitometry, BMD, DXA scan,
+            bone mineral density, dexa bone density]

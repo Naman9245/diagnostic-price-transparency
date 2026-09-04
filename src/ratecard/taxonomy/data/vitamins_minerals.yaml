@@ -1,0 +1,111 @@
+# Vitamins. The two vitamin D assays here are the census's headline example of
+# lexical similarity without clinical sameness: they differ by the token
+# "dihydroxy" and were quoted Rs 2,890 and Rs 2,800 in the same document.
+
+- id: vitamin_d_25_hydroxy
+  name: Vitamin D 25-Hydroxy
+  category: vitamins_minerals
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "62292-8"
+  distinct_from: [vitamin_d_1_25_dihydroxy]
+  aliases: [vitamin D, vitamin D 25 hydroxy, 25 hydroxy vitamin D,
+            vitamin D total, 25-OH vitamin D, vit D, vitamin D3,
+            25 hydroxycholecalciferol, vitamin D 25 OH]
+  notes: >
+    The routine test. Rs 2,890 in the Narayana OPD tier.
+    HARD NEGATIVE vs vitamin_d_1_25_dihydroxy.
+
+- id: vitamin_d_1_25_dihydroxy
+  name: Vitamin D 1,25-Dihydroxy
+  category: vitamins_minerals
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "1649-3"
+  aliases: [vitamin D 1 25 dihydroxy, 1 25 dihydroxy vitamin D,
+            1,25-OH2 vitamin D, calcitriol level,
+            vitamin D 1 25 dihydroxy calcitriol]
+  notes: >
+    A specialist assay, not the routine one. Rs 2,800 - close enough in price
+    that a mismatch would not look obviously wrong in a comparison table.
+    That is exactly why it must be blocked at the taxonomy layer.
+
+- id: vitamin_b12
+  name: Vitamin B12
+  category: vitamins_minerals
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2132-9"
+  distinct_from: [folate]
+  aliases: [vitamin B12, B12, vit B12, cyanocobalamin,
+            serum vitamin B12, cobalamin, vitamin B 12]
+
+- id: folate
+  name: Folic Acid
+  category: vitamins_minerals
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2284-8"
+  aliases: [folic acid, folate, serum folate, vitamin B9,
+            serum folic acid]
+
+- id: vitamin_b12_folate
+  name: Vitamin B12 and Folate
+  category: vitamins_minerals
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  is_panel: true
+  analytes: [vitamin_b12, folate]
+  components: [vitamin_b12, folate]
+  aliases: [B12 and folate, vitamin B12 with folate,
+            folate and vitamin B12, B12 folate profile]
+
+- id: vitamin_b1
+  name: Vitamin B1
+  category: vitamins_minerals
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "2050-3"
+  aliases: [vitamin B1, thiamine, vit B1, thiamine level]
+
+- id: vitamin_a
+  name: Vitamin A
+  category: vitamins_minerals
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  loinc: "2923-1"
+  aliases: [vitamin A, retinol, vit A, serum vitamin A]
+
+- id: vitamin_e
+  name: Vitamin E
+  category: vitamins_minerals
+  kind: lab
+  specimen: serum
+  fasting_required: true
+  loinc: "1823-4"
+  aliases: [vitamin E, tocopherol, vit E, alpha tocopherol]
+
+- id: zinc
+  name: Serum Zinc
+  category: vitamins_minerals
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "5763-8"
+  aliases: [zinc, serum zinc, S zinc, zinc level]
+
+- id: copper
+  name: Serum Copper
+  category: vitamins_minerals
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "5631-7"
+  aliases: [copper, serum copper, S copper, copper level]

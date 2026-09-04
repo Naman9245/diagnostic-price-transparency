@@ -1,0 +1,79 @@
+# Renal. KFT and RFT are the same panel under two names; both alias to one id
+# because no source has been found that prices them differently.
+
+- id: kft
+  name: Kidney Function Test
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  is_panel: true
+  analytes: [urea, creatinine, uric_acid, sodium, potassium, chloride,
+             calcium_serum, phosphorus]
+  components: [urea, creatinine, uric_acid, sodium, potassium, chloride,
+               calcium_serum, phosphorus]
+  aliases: [KFT, RFT, kidney function test, renal function test,
+            renal profile, kidney profile, KFT (kidney function test),
+            renal function test (RFT), kidney function tests]
+
+- id: urea
+  name: Blood Urea
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "22664-7"
+  distinct_from: [bun]
+  aliases: [urea, blood urea, serum urea, S urea, urea serum]
+
+- id: bun
+  name: Blood Urea Nitrogen
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "3094-0"
+  aliases: [BUN, blood urea nitrogen, urea nitrogen]
+  notes: >
+    HARD NEGATIVE vs urea. BUN is urea divided by 2.14 and is reported as its
+    own line item by some sources. Not interchangeable.
+
+- id: creatinine
+  name: Serum Creatinine
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "2160-0"
+  aliases: [creatinine, serum creatinine, S creatinine, creat,
+            creatinine serum]
+
+- id: creatinine_clearance
+  name: Creatinine Clearance
+  category: clinical_chemistry
+  kind: lab
+  specimen: urine_24h
+  fasting_required: false
+  loinc: "2164-2"
+  aliases: [creatinine clearance, CrCl, 24 hour creatinine clearance,
+            creatinine clearance test]
+  notes: Specimen is a 24-hour urine collection, not serum. Blocks on specimen.
+
+- id: uric_acid
+  name: Uric Acid
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "3084-1"
+  aliases: [uric acid, serum uric acid, S uric acid, urate]
+
+- id: egfr
+  name: Estimated GFR
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "33914-3"
+  aliases: [eGFR, estimated GFR, glomerular filtration rate,
+            estimated glomerular filtration rate]

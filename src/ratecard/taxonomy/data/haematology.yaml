@@ -1,0 +1,183 @@
+# Haematology. The CBC / RBC-count pair in here is the canonical hard negative
+# for the Phase 03 evaluation set: lexically close, clinically distinct,
+# differently priced.
+
+- id: cbc
+  name: Complete Blood Count
+  category: haematology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "58410-2"
+  is_panel: true
+  analytes: [haemoglobin, rbc_count, wbc_count, platelet_count, haematocrit,
+             mcv, mch, mchc, rdw, differential_count]
+  components: [haemoglobin, rbc_count, wbc_count, platelet_count, haematocrit,
+               differential_count]
+  aliases: [CBC, complete blood count, complete blood count (CBC), haemogram,
+            hemogram, complete haemogram, CBC (complete blood count),
+            complete blood picture, CBP, full blood count, FBC,
+            complete blood count with differential, blood count complete]
+  notes: >
+    Ten reported analytes. Do not match to rbc_count, wbc_count or any single
+    component: those are separately orderable and separately priced.
+
+- id: haemoglobin
+  name: Haemoglobin
+  category: haematology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "718-7"
+  aliases: [Hb, HB, hemoglobin, haemoglobin estimation, Hb estimation,
+            hemoglobin (Hb), blood haemoglobin, Hgb]
+
+- id: rbc_count
+  name: RBC Count
+  category: haematology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "789-8"
+  aliases: [RBC, RBC count, red blood cell count, red cell count,
+            erythrocyte count, total RBC count, TRBC]
+  notes: >
+    HARD NEGATIVE vs cbc. A single analyte, not a panel. Sources abbreviate
+    both as three letters starting with a C or an R and token overlap is high.
+
+- id: wbc_count
+  name: Total Leukocyte Count
+  category: haematology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "6690-2"
+  aliases: [TLC, WBC, WBC count, total WBC count, white blood cell count,
+            total leucocyte count, leukocyte count, total leukocyte count (TLC)]
+
+- id: differential_count
+  name: Differential Leukocyte Count
+  category: haematology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "24318-8"
+  aliases: [DLC, differential count, differential leucocyte count,
+            DC, WBC differential, differential white cell count]
+
+- id: platelet_count
+  name: Platelet Count
+  category: haematology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "777-3"
+  aliases: [platelet count, PLT, platelets, thrombocyte count,
+            platelet count (PLT)]
+
+- id: haematocrit
+  name: Haematocrit
+  category: haematology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "4544-3"
+  aliases: [HCT, PCV, packed cell volume, hematocrit, haematocrit (PCV),
+            packed cell volume (PCV)]
+
+- id: esr
+  name: Erythrocyte Sedimentation Rate
+  category: haematology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "4537-7"
+  aliases: [ESR, sed rate, erythrocyte sedimentation rate (ESR),
+            ESR westergren, sedimentation rate, ESR (westergren method)]
+
+- id: peripheral_smear
+  name: Peripheral Blood Smear
+  category: haematology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "11156-7"
+  aliases: [peripheral smear, PS, peripheral blood smear examination,
+            PBS, blood film, peripheral smear examination, PSE]
+
+- id: absolute_eosinophil_count
+  name: Absolute Eosinophil Count
+  category: haematology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "711-2"
+  aliases: [AEC, absolute eosinophil count (AEC), eosinophil count absolute,
+            absolute eosinophil]
+
+- id: reticulocyte_count
+  name: Reticulocyte Count
+  category: haematology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "17849-1"
+  aliases: [reticulocyte count, retic count, reticulocytes,
+            reticulocyte percentage]
+
+- id: blood_group
+  name: Blood Group ABO and Rh Typing
+  category: haematology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "34530-6"
+  is_panel: true
+  analytes: [abo_group, rh_factor]
+  aliases: [blood group, blood grouping, ABO Rh, blood group and Rh type,
+            blood group ABO and Rh, BG, blood group typing,
+            ABO and Rh typing, blood group with Rh factor]
+
+- id: haemoglobin_electrophoresis
+  name: Haemoglobin Electrophoresis
+  category: haematology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "4635-9"
+  aliases: [Hb electrophoresis, haemoglobin electrophoresis,
+            hemoglobin electrophoresis, HPLC haemoglobin,
+            Hb variant analysis, haemoglobinopathy screen]
+
+- id: g6pd
+  name: G6PD Screening
+  category: haematology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "32546-6"
+  aliases: [G6PD, G6PD screening, glucose 6 phosphate dehydrogenase,
+            G6PD quantitative, G 6 PD]
+
+- id: coombs_direct
+  name: Direct Coombs Test
+  category: haematology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "1000-9"
+  distinct_from: [coombs_indirect]
+  aliases: [DCT, direct coombs, direct antiglobulin test, DAT,
+            coombs test direct]
+  notes: HARD NEGATIVE vs coombs_indirect. One word apart, different indication.
+
+- id: coombs_indirect
+  name: Indirect Coombs Test
+  category: haematology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "1006-6"
+  aliases: [ICT, indirect coombs, indirect antiglobulin test, IAT,
+            coombs test indirect]
+  notes: HARD NEGATIVE vs coombs_direct.
