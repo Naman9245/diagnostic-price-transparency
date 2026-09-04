@@ -167,3 +167,80 @@
   fasting_required: false
   loinc: "2276-4"
   aliases: [ferritin, serum ferritin, S ferritin, ferritin serum]
+
+# --- added from the Phase 00 coverage worklist (seen in 3-4 sources) --------
+
+- id: ace
+  name: Angiotensin Converting Enzyme
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "1979-4"
+  aliases: [ACE, angiotensin converting enzyme, serum ACE,
+            ACE (angiotensin converting enzyme), angiotensin 1 converting enzyme]
+
+- id: adenosine_deaminase
+  name: Adenosine Deaminase
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "1798-9"
+  aliases: [ADA, adenosine deaminase, serum ADA, ADA level]
+
+- id: aldolase
+  name: Aldolase
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "1763-2"
+  aliases: [aldolase, serum aldolase, aldolase level]
+
+- id: acid_phosphatase
+  name: Acid Phosphatase
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "1834-2"
+  aliases: [acid phosphatase, serum acid phosphatase,
+            total acid phosphatase, ACP]
+
+- id: ceruloplasmin
+  name: Ceruloplasmin
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "1825-9"
+  aliases: [ceruloplasmin, serum ceruloplasmin, caeruloplasmin]
+
+- id: cystatin_c
+  name: Cystatin C
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "33863-2"
+  aliases: [cystatin C, serum cystatin C, cystatin c level]
+
+- id: fructosamine
+  name: Fructosamine
+  category: clinical_chemistry
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "1558-9"
+  aliases: [fructosamine, serum fructosamine, glycated albumin]
+
+- id: absolute_neutrophil_count
+  name: Absolute Neutrophil Count
+  category: haematology
+  kind: lab
+  specimen: whole_blood
+  fasting_required: false
+  loinc: "751-8"
+  aliases: [ANC, absolute neutrophil count, absolute neutrophil test,
+            neutrophil count absolute]

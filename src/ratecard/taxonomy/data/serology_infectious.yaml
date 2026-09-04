@@ -205,3 +205,60 @@
   loinc: "33959-8"
   aliases: [procalcitonin, PCT, serum procalcitonin,
             procalcitonin quantitative]
+
+# --- added from the Phase 00 coverage worklist (seen in 3-4 sources) --------
+
+- id: weil_felix
+  name: Weil-Felix Test
+  category: serology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  aliases: [weil felix, weil felix test, weil-felix,
+            rickettsial agglutination test]
+
+- id: measles_igm
+  name: Measles IgM Antibody
+  category: serology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  aliases: [measles IgM, measles IgM antibodies, anti measles IgM,
+            measles IgM antibody]
+
+- id: mumps_igm
+  name: Mumps IgM Antibody
+  category: serology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  distinct_from: [mumps_igg]
+  aliases: [mumps IgM, mumps IgM antibodies, anti mumps IgM,
+            mumps IgM antibody]
+
+- id: mumps_igg
+  name: Mumps IgG Antibody
+  category: serology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  aliases: [mumps IgG, mumps IgG antibodies, anti mumps IgG,
+            mumps IgG antibody]
+
+- id: anti_centromere
+  name: Anti-Centromere Antibody
+  category: immunology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  aliases: [anti centromere antibodies, anti centromere antibody,
+            ACA antibody, anti-centromere]
+
+- id: intrinsic_factor_antibody
+  name: Intrinsic Factor Antibody
+  category: immunology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  aliases: [intrinsic factor antibody, anti intrinsic factor,
+            intrinsic factor antibodies, IF antibody]
