@@ -65,3 +65,12 @@
   fasting_required: false
   loinc: "1834-1"
   aliases: [AFP, alpha fetoprotein, alpha feto protein, serum AFP]
+
+- id: chromogranin_a
+  name: Chromogranin A
+  category: tumour_markers
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "33325-3"
+  aliases: [chromogranin A, serum chromogranin A, CgA, chromogranin a level]

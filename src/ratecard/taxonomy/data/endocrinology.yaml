@@ -239,3 +239,42 @@
   loinc: "2963-7"
   aliases: [growth hormone, GH, HGH, human growth hormone,
             somatotropin]
+
+# --- added from the Phase 00 coverage worklist (seen in 3-4 sources) --------
+
+- id: acth
+  name: Adrenocorticotropic Hormone
+  category: endocrinology
+  kind: lab
+  specimen: plasma
+  fasting_required: false
+  loinc: "2141-0"
+  aliases: [ACTH, adrenocorticotropic hormone,
+            adrenocorticotropic hormone (ACTH), corticotropin]
+
+- id: aldosterone
+  name: Aldosterone
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "1763-6"
+  aliases: [aldosterone, serum aldosterone, plasma aldosterone,
+            aldosterone level]
+
+- id: calcitonin
+  name: Calcitonin
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  loinc: "1988-1"
+  aliases: [calcitonin, serum calcitonin, calcitonin level]
+
+- id: inhibin_b
+  name: Inhibin B
+  category: endocrinology
+  kind: lab
+  specimen: serum
+  fasting_required: false
+  aliases: [inhibin B, serum inhibin B, inhibin b level]
