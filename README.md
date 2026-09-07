@@ -16,7 +16,7 @@ can be compared and the product does not exist.
 |---|---|---|
 | 00 Seed corpus | rebuilt 4 Sep | 12,993 rows, 11,682 distinct names, 4 source documents |
 | 01 Canonical taxonomy | in progress | 210 tests, validating, **exit criterion needs restating — see below** |
-| 02 The matcher | not started | |
+| 02 The matcher | built, untuned | 17.2% of rows resolved, 204/210 canonical tests hit |
 | 03 Label and evaluate | not started | the deliverable |
 
 ## Architecture
@@ -31,8 +31,57 @@ conventional read-heavy API.
                 sha256       selectolax     MiniLM          Nominatim Next.js
 ```
 
-`src/ratecard/` mirrors those stages one directory each. Only `taxonomy/`,
-`names.py` and `normalise/rules.py` carry implementation today.
+`src/ratecard/` mirrors those stages one directory each. Stage 4 and the
+taxonomy carry implementation today; stages 1-3 and 5-6 are seams.
+
+## Stage 4: the matcher
+
+```bash
+.venv/bin/ratecard match data/corpus/phase00.csv --out data/interim/matched.csv
+```
+
+Four layers, in order:
+
+| | | |
+|---|---|---|
+| 0 | exact | alias-index hit, confidence 1.0, needs no review |
+| 1 | candidates | `token_set_ratio` generates, `WRatio` ranks |
+| 2 | veto | attribute conflicts + the taxonomy's declared-distinct rules |
+| 3 | rerank | *optional* sentence-transformer cosine similarity |
+
+The two-scorer split in layer 1 is not decoration. `token_set_ratio` returns a
+flat 100 whenever one token set is a subset of the other, which tied `urea`
+against `bun` at 100 apiece on "blood urea nitrogen bun". `token_sort_ratio`
+fixes that but over-punishes elaboration, scoring "esr automated westergren
+erythrocyte sedimentation rate" against "esr" at 10. On a seven-case
+discrimination set WRatio ranked 7/7 correctly, token_sort 6/7, token_set 4/7.
+
+Layer 2 needed a bridge: `rules` compares two canonical tests, but matching has
+a raw string on one side. `normalise/attributes.py` reads the same attributes
+out of free text that the taxonomy declares as fields — so "CT BRAIN PLAIN"
+carries `contrast=False` and vetoes `ct_brain_contrast`, and "24 HRS URINE FOR
+CALCIUM" carries `specimen=urine_24h` and vetoes `calcium_serum`. Absence of an
+attribute means unknown, never false; two attributes conflict only when both
+sides assert something.
+
+### Current numbers, untuned
+
+```
+ROWS     2241/12993   17.2% resolved
+NAMES    1871/11682   16.0% resolved
+canonical tests hit    204/210 (97%)
+
+  abstain_no_candidate   58.8%     abstain_low_score     6.1%
+  abstain_thin_margin    17.9%     exact                 2.3%
+  lexical                13.7%     abstain_vetoed        1.2%
+```
+
+**The thresholds are untuned placeholders and must stay that way until Phase
+03.** Labelling 500 pairs *after* fitting thresholds to this corpus would make
+the evaluation meaningless. The abstention rate is high on purpose: most of
+`abstain_no_candidate` is surgery, chemotherapy and specialist assays that
+genuinely are not in a 210-test routine taxonomy, and silence is the correct
+answer for those.
 
 ## Phase 01: the taxonomy
 
