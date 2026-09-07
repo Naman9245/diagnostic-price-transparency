@@ -7,6 +7,11 @@
     ratecard hard-negatives      seed pairs for the Phase 03 evaluation set
     ratecard coverage CORPUS.csv measure the taxonomy against a Phase 00 dump
     ratecard match CORPUS.csv    run the Stage 4 matcher over a corpus
+
+Phase 03, in this order and no other:
+    ratecard sample CORPUS.csv   draw the stratified labelling set
+    ratecard label LABELS.csv    label it by hand, before tuning anything
+    ratecard evaluate LABELS.csv score the matcher against those labels
 """
 
 from __future__ import annotations
@@ -15,6 +20,10 @@ import argparse
 import sys
 from pathlib import Path
 
+from ratecard.evaluate.labelling import LabelSession
+from ratecard.evaluate.labelling import run as run_labelling
+from ratecard.evaluate.metrics import evaluate as run_evaluate
+from ratecard.evaluate.sampling import STRATA, build_sample, write_sample
 from ratecard.names import normalise
 from ratecard.normalise import explain
 from ratecard.normalise.matcher import Matcher
@@ -226,6 +235,106 @@ def cmd_match(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def cmd_sample(args: argparse.Namespace) -> int:
+    taxonomy = _load_or_die()
+    corpus = Path(args.corpus)
+    if not corpus.exists():
+        print(f"Corpus not found: {corpus}", file=sys.stderr)
+        return EXIT_INVALID
+
+    out = Path(args.out)
+    if out.exists() and not args.force:
+        print(f"{out} already exists. Re-drawing would discard existing labels.\n"
+              f"Pass --force only if you are certain.", file=sys.stderr)
+        return EXIT_INVALID
+
+    print(f"matching {corpus} to bucket by stratum ...\n")
+    rows, population = build_sample(taxonomy, corpus, seed=args.seed)
+    write_sample(rows, out)
+
+    total_population = sum(population.values())
+    print(f"{'stratum':30} {'drawn':>6} {'of':>7}  {'share':>6}   why")
+    for stratum, (_quota, why) in STRATA.items():
+        drawn = sum(1 for r in rows if r.stratum == stratum)
+        size = population.get(stratum, 0)
+        share = 100 * size / total_population if total_population else 0
+        print(f"  {stratum:28} {drawn:>6} {size:>7}  {share:5.1f}%   {why}")
+
+    holdout = sum(1 for r in rows if r.split == "holdout")
+    print(f"\n  {len(rows)} rows drawn: {len(rows) - holdout} train, {holdout} holdout")
+    print(f"  wrote {out}")
+    print("\n  The sample is STRATIFIED, not uniform. Rates measured on it are not")
+    print("  corpus rates - `ratecard evaluate` reweights by the sizes above.")
+    print(f"\n  Next: ratecard label {out}")
+    return EXIT_OK
+
+
+def cmd_label(args: argparse.Namespace) -> int:
+    taxonomy = _load_or_die()
+    labels = Path(args.labels)
+    if not labels.exists():
+        print(f"No labelling set at {labels}. Run `ratecard sample` first.", file=sys.stderr)
+        return EXIT_INVALID
+    session = LabelSession.load(labels, labelled_by=args.by)
+    return run_labelling(session, taxonomy)
+
+
+def cmd_evaluate(args: argparse.Namespace) -> int:
+    _load_or_die()
+    labels = Path(args.labels)
+    if not labels.exists():
+        print(f"No labelling set at {labels}.", file=sys.stderr)
+        return EXIT_INVALID
+
+    if args.split == "holdout":
+        print("  ! Holdout split. This is meant to be read once, after every")
+        print("  ! threshold is frozen. Re-reading it while tuning turns it")
+        print("  ! into a second training set.\n", file=sys.stderr)
+
+    metrics = run_evaluate(labels, split=None if args.split == "all" else args.split)
+    scored, total = len(metrics.scored), len(metrics.judgements)
+    if not scored:
+        print(f"Nothing labelled yet in split '{args.split}'. "
+              f"Run `ratecard label {labels}`.", file=sys.stderr)
+        return EXIT_INVALID
+
+    counts = metrics.counts()
+    print(f"split={args.split}   {scored} scored of {total} "
+          f"({total - scored} unsure or unlabelled)\n")
+    for outcome, count in counts.most_common():
+        print(f"    {outcome:22} {count:>5}  {100 * count / scored:5.1f}%")
+
+    def pct(value):
+        return "     —" if value is None else f"{100 * value:5.1f}%"
+
+    print(f"\n  precision            {pct(metrics.precision())}   "
+          f"of the answers it gave, how many were right")
+    print(f"  recall               {pct(metrics.recall())}   "
+          f"of answerable rows, how many it got")
+    print(f"  F1                   {pct(metrics.f1())}")
+    print(f"  coverage             {pct(metrics.coverage())}   "
+          f"how often it answered at all")
+    print(f"  abstention precision {pct(metrics.abstention_precision())}   "
+          f"when it refused, was refusing right")
+    print(f"\n  HARD-NEGATIVE ACCURACY {pct(metrics.hard_negative_precision())}   "
+          f"<- the number worth quoting")
+
+    by_stratum = metrics.by_stratum()
+    if len(by_stratum) > 1:
+        print("\n  by stratum:")
+        for stratum in sorted(by_stratum):
+            print(f"    {stratum:30} precision {pct(metrics.precision(stratum))}  "
+                  f"n={sum(by_stratum[stratum].values())}")
+
+    worst = metrics.worst(args.worst)
+    if worst:
+        print(f"\n  confidently wrong - the {len(worst)} to explain in the write-up:")
+        for j in worst:
+            print(f"    {j.confidence:5.1f}  {j.raw_name[:44]:46} "
+                  f"said {j.guess or '—'}, is {j.label}")
+    return EXIT_OK
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="ratecard", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -257,6 +366,24 @@ def main(argv: list[str] | None = None) -> int:
     match_cmd.add_argument("--rerank", action="store_true",
                            help="enable the embedding rerank (needs the rerank extra)")
     match_cmd.set_defaults(fn=cmd_match)
+
+    sample = sub.add_parser("sample", help="draw the stratified labelling set")
+    sample.add_argument("corpus")
+    sample.add_argument("--out", default="data/eval/labels.csv")
+    sample.add_argument("--seed", type=int, default=20260905)
+    sample.add_argument("--force", action="store_true", help="overwrite existing labels")
+    sample.set_defaults(fn=cmd_sample)
+
+    label = sub.add_parser("label", help="label the sample by hand")
+    label.add_argument("labels", nargs="?", default="data/eval/labels.csv")
+    label.add_argument("--by", default="", help="who is labelling")
+    label.set_defaults(fn=cmd_label)
+
+    ev = sub.add_parser("evaluate", help="score the matcher against the labels")
+    ev.add_argument("labels", nargs="?", default="data/eval/labels.csv")
+    ev.add_argument("--split", choices=["train", "holdout", "all"], default="train")
+    ev.add_argument("--worst", type=int, default=20)
+    ev.set_defaults(fn=cmd_evaluate)
 
     args = parser.parse_args(argv)
     return args.fn(args)

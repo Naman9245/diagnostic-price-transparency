@@ -16,4 +16,8 @@ data/interim/*
 data/corpus/*
 !data/corpus/.gitkeep
 
+# data/eval/ IS committed, deliberately. The labels are irreplaceable hand
+# work - regenerating the sample is cheap, re-labelling 500 rows is not.
+*.csv.tmp
+
 .env
