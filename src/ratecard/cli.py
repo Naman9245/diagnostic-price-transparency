@@ -6,6 +6,7 @@
     ratecard check A B           why two canonical tests may not be matched
     ratecard hard-negatives      seed pairs for the Phase 03 evaluation set
     ratecard coverage CORPUS.csv measure the taxonomy against a Phase 00 dump
+    ratecard match CORPUS.csv    run the Stage 4 matcher over a corpus
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ from pathlib import Path
 
 from ratecard.names import normalise
 from ratecard.normalise import explain
+from ratecard.normalise.matcher import Matcher
 from ratecard.taxonomy import ValidationError, load
 from ratecard.taxonomy.coverage import analyse, hard_negative_pairs
 from ratecard.taxonomy.loader import collect_warnings
@@ -151,6 +153,79 @@ def cmd_coverage(args: argparse.Namespace) -> int:
     return EXIT_OK if passed else EXIT_BELOW_TARGET
 
 
+def cmd_match(args: argparse.Namespace) -> int:
+    taxonomy = _load_or_die()
+    corpus = Path(args.corpus)
+    if not corpus.exists():
+        print(f"Corpus not found: {corpus}", file=sys.stderr)
+        return EXIT_INVALID
+
+    import collections
+    import csv
+
+    reranker = None
+    if args.rerank:
+        from ratecard.normalise.rerank import load_reranker
+        reranker = load_reranker()
+        if reranker is None:
+            print("  ! sentence-transformers not installed; running lexical only\n",
+                  file=sys.stderr)
+    matcher = Matcher(taxonomy, reranker=reranker)
+    with corpus.open(newline="", encoding="utf-8") as handle:
+        names = [r["raw_name"].strip() for r in csv.DictReader(handle) if r.get("raw_name")]
+
+    distinct = sorted(set(names))
+    print(f"matching {len(distinct)} distinct names from {len(names)} rows ...\n")
+    results = {name: matcher.match(name) for name in distinct}
+
+    methods: collections.Counter[str] = collections.Counter()
+    row_methods: collections.Counter[str] = collections.Counter()
+    for name in names:
+        row_methods[results[name].method] += 1
+    for match in results.values():
+        methods[match.method] += 1
+
+    resolved_rows = sum(c for m, c in row_methods.items() if not m.startswith("abstain"))
+    resolved_names = sum(c for m, c in methods.items() if not m.startswith("abstain"))
+
+    print(f"  ROWS    {resolved_rows:>7}/{len(names):<7} resolved   "
+          f"{100 * resolved_rows / len(names):5.1f}%")
+    print(f"  NAMES   {resolved_names:>7}/{len(distinct):<7} resolved   "
+          f"{100 * resolved_names / len(distinct):5.1f}%\n")
+    for method, count in methods.most_common():
+        print(f"    {method:22} {count:>7} names  {100 * count / len(distinct):5.1f}%")
+
+    covered = {m.test_id for m in results.values() if m.test_id}
+    print(f"\n  canonical tests hit: {len(covered)}/{len(taxonomy)} "
+          f"({100 * len(covered) / len(taxonomy):.0f}%)")
+
+    if args.out:
+        out = Path(args.out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        with out.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(["raw_name", "canonical_test_id", "match_confidence",
+                             "match_method", "needs_review", "reason"])
+            for name in distinct:
+                m = results[name]
+                writer.writerow([name, m.test_id or "", f"{m.confidence:.1f}",
+                                 m.method, str(m.needs_review), m.reason or ""])
+        print(f"\n  wrote {out}")
+
+    if args.show:
+        print(f"\n  sample of {args.show} abstentions:")
+        shown = 0
+        for name in distinct:
+            m = results[name]
+            if m.abstained and m.candidates:
+                print(f"    {name[:52]:54} {m.method}")
+                print(f"      └─ {(m.reason or '')[:96]}")
+                shown += 1
+                if shown >= args.show:
+                    break
+    return EXIT_OK
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="ratecard", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -174,6 +249,14 @@ def main(argv: list[str] | None = None) -> int:
     coverage.add_argument("corpus")
     coverage.add_argument("--top", type=int, default=40)
     coverage.set_defaults(fn=cmd_coverage)
+
+    match_cmd = sub.add_parser("match", help="run the Stage 4 matcher over a corpus")
+    match_cmd.add_argument("corpus")
+    match_cmd.add_argument("--out", help="write per-name results to this CSV")
+    match_cmd.add_argument("--show", type=int, default=0, help="sample N abstentions")
+    match_cmd.add_argument("--rerank", action="store_true",
+                           help="enable the embedding rerank (needs the rerank extra)")
+    match_cmd.set_defaults(fn=cmd_match)
 
     args = parser.parse_args(argv)
     return args.fn(args)
