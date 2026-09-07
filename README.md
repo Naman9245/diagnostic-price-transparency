@@ -17,7 +17,7 @@ can be compared and the product does not exist.
 | 00 Seed corpus | rebuilt 4 Sep | 12,993 rows, 11,682 distinct names, 4 source documents |
 | 01 Canonical taxonomy | in progress | 210 tests, validating, **exit criterion needs restating — see below** |
 | 02 The matcher | built, untuned | 17.2% of rows resolved, 204/210 canonical tests hit |
-| 03 Label and evaluate | not started | the deliverable |
+| 03 Label and evaluate | tooling ready, 0/500 labelled | **the deliverable** |
 
 ## Architecture
 
@@ -210,6 +210,63 @@ Column one is the OPD walk-in rate in both, which is the tier the corpus loads
 as `price`. But `price_tier` cannot be a shared enum across publishers — the
 tier vocabulary is per-document, and Stage 3 will have to carry the source's own
 column header rather than normalise it away.
+
+## Phase 03: labelling and evaluation
+
+```bash
+.venv/bin/ratecard sample data/corpus/phase00.csv   # already drawn, 500 rows
+.venv/bin/ratecard label  data/eval/labels.csv --by you
+.venv/bin/ratecard evaluate data/eval/labels.csv
+```
+
+The set is drawn: 500 rows, 357 train / 143 holdout, seeded and reproducible.
+
+**It is stratified, not uniform, and that is load-bearing.** A uniform draw
+from 11,682 names would be dominated by surgical procedures where the answer is
+"none", and 350 labels proving the matcher declines to match `ABOVE ELBOW
+AMPUTATION` teach nothing. Each stratum is drawn to a quota chosen for what it
+can teach:
+
+| stratum | drawn | of | why |
+|---|---|---|---|
+| `exact` | 60 | 268 | are the aliases themselves right? |
+| `lexical` | 140 | 1,603 | the risk surface: confident answers that may be wrong |
+| `abstain_thin_margin` | 100 | 859 | near-misses; the veto layer's home ground |
+| `declared_distinct_neighbour` | 40 | 1,231 | top two are a curated hard-negative pair |
+| `abstain_low_score` | 60 | 707 | did we refuse something we should have taken? |
+| `abstain_no_candidate` | 60 | 6,868 | mostly true negatives; confirms the floor |
+| `abstain_vetoed` | 40 | 146 | did a hard rule over-fire? |
+
+The consequence: rates measured on this sample are **not** corpus rates.
+`Metrics.corpus_estimate` reweights per-stratum rates by the true sizes above,
+and the naive pooled number is never reported as a corpus figure.
+
+### Two things the labelling tool does deliberately
+
+**The matcher's answer is hidden.** The candidate pool is shown — 210 options
+is more than anyone can hold in their head — but not which candidate the
+matcher picked, nor its score, and the list is sorted by id rather than by rank.
+A labeller shown "the machine thinks this is `cbc`, agree?" agrees far more
+often than they should, and that inflates the exact number this exercise exists
+to measure honestly.
+
+**Nothing is ever lost.** The file is rewritten through a temp file after every
+single label, and the session resumes from the first unlabelled row. `s` skips,
+`q` saves and quits, `?text` searches the taxonomy, `=id` enters an id directly.
+
+### What gets reported
+
+Five outcomes, because "accuracy" hides the distinction that matters:
+`correct_match`, `wrong_match`, `missed`, `correct_abstention`, `unsure`.
+
+A missed row shows the user nothing. A wrong row shows them a confident price
+for the wrong test — the one failure this project exists to prevent. So
+precision leads, and the headline claim should be a precision figure at a
+stated coverage, with **hard-negative accuracy reported separately**. That
+second number is the interesting one.
+
+`data/eval/` is committed. Regenerating the sample is cheap; re-labelling 500
+rows is not.
 
 ## Three things that are not done
 
