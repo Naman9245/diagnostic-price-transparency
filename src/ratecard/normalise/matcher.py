@@ -50,6 +50,8 @@ from ratecard.taxonomy.loader import Taxonomy
 # Untuned. See module docstring.
 ACCEPT_THRESHOLD = 85.0
 MARGIN = 5.0
+# How much the embedding is allowed to move a candidate. Untuned.
+RERANK_WEIGHT = 0.35
 CANDIDATE_LIMIT = 10
 CANDIDATE_FLOOR = 60.0
 
@@ -86,7 +88,23 @@ class Candidate:
 
     @property
     def score(self) -> float:
-        return self.lexical if self.rerank is None else self.rerank
+        """Blend, not replace.
+
+        The rerank arrives as a cosine similarity scaled to 0-100, and those
+        cluster tightly - a MiniLM embedding of two short medical phrases is
+        rarely below 0.5 or above 0.95. Letting it *replace* the lexical score
+        collapsed the spread between candidates, so nearly everything fell
+        inside the thin-margin window and the matcher abstained on rows it had
+        been resolving correctly: "blood urea nitrogen bun" and "serum
+        electrolytes (na k cl)" both regressed to abstentions.
+
+        Blending keeps the lexical spread and lets the embedding move a
+        candidate up or down within it. RERANK_WEIGHT is untuned, like every
+        other constant here.
+        """
+        if self.rerank is None:
+            return self.lexical
+        return (1.0 - RERANK_WEIGHT) * self.lexical + RERANK_WEIGHT * self.rerank
 
     @property
     def blocked(self) -> bool:

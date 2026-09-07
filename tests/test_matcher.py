@@ -102,3 +102,25 @@ def test_match_many(matcher):
     results = matcher.match_many(["CBC", "TSH", "ACRYLIC CRANIOPLASTY"])
     assert len(results) == 3
     assert [r.test_id for r in results[:2]] == ["cbc", "tsh"]
+
+
+def test_rerank_blends_rather_than_replaces():
+    """A cosine similarity scaled to 0-100 clusters far more tightly than
+    WRatio does. Substituting it collapsed the spread between candidates and
+    made the matcher abstain on rows it had been resolving."""
+    from ratecard.normalise.matcher import RERANK_WEIGHT, Candidate
+
+    lexical_only = Candidate("x", "x", lexical=95.0)
+    assert lexical_only.score == 95.0
+
+    blended = Candidate("x", "x", lexical=95.0, rerank=60.0)
+    expected = (1 - RERANK_WEIGHT) * 95.0 + RERANK_WEIGHT * 60.0
+    assert blended.score == pytest.approx(expected)
+    assert 60.0 < blended.score < 95.0, "blend must sit between its inputs"
+
+
+def test_matcher_runs_without_the_optional_reranker():
+    """Layers 0-2 are a working matcher. A missing optional dependency must
+    degrade it, not break it."""
+    m = Matcher(load(), reranker=None)
+    assert m.match("COMPLETE BLOOD COUNT (CBC)").test_id == "cbc"
