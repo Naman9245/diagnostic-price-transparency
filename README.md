@@ -83,6 +83,43 @@ the evaluation meaningless. The abstention rate is high on purpose: most of
 genuinely are not in a 210-test routine taxonomy, and silence is the correct
 answer for those.
 
+**17.2% resolved is not 17.2% correct.** See below.
+
+### What the embedding rerank actually does
+
+Off by default (`--rerank` to enable). On a 1,500-name random sample it changes
+the answer 215 times, and the direction is one-sided:
+
+```
+rerank RESOLVED what lexical refused :  11
+rerank REFUSED what lexical resolved : 204
+rerank picked a DIFFERENT test       :   0
+```
+
+It is a **precision filter, not a recall booster**. Twelve of those refusals
+were inspected by hand and all twelve were lexical errors:
+
+| raw name | lexical said | rerank |
+|---|---|---|
+| `CT ELBOW RIGHT` | `clotting_time` | refuses |
+| `OT CHARGES - PER 15 MINS (3-6 HRS)` | `ca_15_3` | refuses |
+| `LUMBAR DRAIN` | `xray_lumbar_spine` | refuses |
+| `FACTOR VII ASSAY` | `rheumatoid_factor` | refuses |
+| `herpes simplex virus igg serum` | `lh` | refuses |
+| `PLEURAL FLUID FOR CELL COUNT` | `rbc_count` | refuses |
+
+Twelve of 204 is not a measurement, and some of the other 192 are certainly
+correct matches being lost. But it does say the lexical layer is confidently
+wrong often enough that the headline resolution figure overstates it, and that
+the rerank's job here is subtraction. Phase 03 is what turns this into numbers.
+
+One design note. The rerank **blends** with the lexical score rather than
+replacing it. Substituting it outright collapsed the spread between candidates
+— MiniLM cosine similarities on short medical phrases rarely leave 0.5–0.95 —
+so nearly everything fell inside the thin-margin window and rows that had been
+resolving correctly (`blood urea nitrogen bun`, `serum electrolytes (na k cl)`)
+regressed to abstentions.
+
 ## Phase 01: the taxonomy
 
 `src/ratecard/taxonomy/data/*.yaml` — 210 hand-curated canonical tests across
