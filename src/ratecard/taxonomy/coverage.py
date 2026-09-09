@@ -61,10 +61,14 @@ def _name_column(fieldnames: list[str] | None) -> str | None:
 
 
 def _build_token_sets(taxonomy: Taxonomy) -> list[tuple[frozenset[str], str]]:
-    """Token sets for every canonical surface form, longest first.
+    """Token sets for every canonical surface form.
 
-    Longest first so that 'ultrasound abdomen and pelvis' is tried before
-    'ultrasound abdomen' and the more specific study wins the containment test.
+    Unordered, deliberately. An earlier version sorted these longest-first and
+    claimed that let the more specific study win, but the only caller asks
+    `any(...)`, which is order-independent - the sort decided nothing and the
+    docstring described behaviour that was not there. `reachable` is a yes/no
+    containment ceiling and does not pick between tests; that is the matcher's
+    job, not this one's.
     """
     surfaces: list[tuple[frozenset[str], str]] = []
     for test in taxonomy:
@@ -72,7 +76,6 @@ def _build_token_sets(taxonomy: Taxonomy) -> list[tuple[frozenset[str], str]]:
             token_set = tokens(surface)
             if token_set:
                 surfaces.append((token_set, test.id))
-    surfaces.sort(key=lambda pair: len(pair[0]), reverse=True)
     return surfaces
 
 

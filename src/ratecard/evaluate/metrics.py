@@ -23,6 +23,7 @@ as one.
 from __future__ import annotations
 
 import csv
+import json
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -147,6 +148,21 @@ def _outcome(label: str, guess: str) -> Outcome:
     return "correct_abstention" if label == NONE_LABEL else "missed"
 
 
+def load_population(labels_path: Path) -> Counter[str]:
+    """True stratum sizes, written beside the labels when the sample was drawn.
+
+    Missing sidecar returns empty, and `corpus_estimate` then returns None
+    rather than silently reporting a stratified rate as a corpus rate.
+    """
+    sidecar = labels_path.with_suffix(labels_path.suffix + ".population.json")
+    if not sidecar.exists():
+        return Counter()
+    try:
+        return Counter(json.loads(sidecar.read_text(encoding="utf-8")))
+    except (OSError, ValueError):
+        return Counter()
+
+
 def evaluate(labels_path: Path, split: str | None = "train",
              population: Counter[str] | None = None) -> Metrics:
     """Read a labelled CSV and score it.
@@ -171,4 +187,4 @@ def evaluate(labels_path: Path, split: str | None = "train",
                 confidence=float(row.get("matcher_confidence") or 0),
                 outcome=_outcome(label, guess),
             ))
-    return Metrics(judgements, population or Counter())
+    return Metrics(judgements, population or load_population(labels_path))

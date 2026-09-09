@@ -22,6 +22,7 @@ matter in the write-up is accuracy on them specifically.
 from __future__ import annotations
 
 import csv
+import json
 import random
 from collections import Counter
 from dataclasses import dataclass
@@ -131,8 +132,24 @@ def build_sample(
     return drawn, population
 
 
-def write_sample(rows: list[SampleRow], out_path: Path) -> None:
+def population_path(labels_path: Path) -> Path:
+    """Sidecar holding true stratum sizes, next to the labels themselves.
+
+    Without this the sample is unusable for corpus-level estimates: the whole
+    point of stratifying is that sample rates are not corpus rates, and
+    correcting for that needs the population each stratum was drawn from.
+    Recomputing it later would mean re-matching the entire corpus with
+    whatever the matcher looks like *then*, which is not the same number.
+    """
+    return labels_path.with_suffix(labels_path.suffix + ".population.json")
+
+
+def write_sample(rows: list[SampleRow], out_path: Path,
+                 population: Counter[str] | None = None) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
+    if population is not None:
+        population_path(out_path).write_text(
+            json.dumps(dict(population), indent=2, sort_keys=True), encoding="utf-8")
     with out_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=FIELDS)
         writer.writeheader()

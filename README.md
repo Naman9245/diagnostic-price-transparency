@@ -14,9 +14,9 @@ can be compared and the product does not exist.
 
 | Phase | | |
 |---|---|---|
-| 00 Seed corpus | rebuilt 4 Sep | 12,993 rows, 11,682 distinct names, 4 source documents |
+| 00 Seed corpus | rebuilt 4 Sep | 13,112 rows, 11,648 distinct names, 4 source documents |
 | 01 Canonical taxonomy | in progress | 210 tests, validating, **exit criterion needs restating — see below** |
-| 02 The matcher | built, untuned | 17.2% of rows resolved, 204/210 canonical tests hit |
+| 02 The matcher | built, untuned | 20.7% of rows resolved, 205/210 canonical tests hit |
 | 03 Label and evaluate | tooling ready, 0/500 labelled | **the deliverable** |
 
 ## Architecture
@@ -67,14 +67,17 @@ sides assert something.
 ### Current numbers, untuned
 
 ```
-ROWS     2241/12993   17.2% resolved
-NAMES    1871/11682   16.0% resolved
-canonical tests hit    204/210 (97%)
+ROWS     2716/13112   20.7% resolved
+NAMES    2298/11755   19.5% resolved
+canonical tests hit    205/210 (98%)
 
-  abstain_no_candidate   58.8%     abstain_low_score     6.1%
-  abstain_thin_margin    17.9%     exact                 2.3%
-  lexical                13.7%     abstain_vetoed        1.2%
+  abstain_no_candidate   58.7%     abstain_low_score     6.0%
+  abstain_thin_margin    14.5%     exact                 2.3%
+  lexical                17.3%     abstain_vetoed        1.3%
 ```
+
+Only an **exact alias hit** is trusted without review. Everything else carries
+`needs_review`, however high it scored — see the review notes below.
 
 **The thresholds are untuned placeholders and must stay that way until Phase
 03.** Labelling 500 pairs *after* fitting thresholds to this corpus would make
@@ -83,7 +86,7 @@ the evaluation meaningless. The abstention rate is high on purpose: most of
 genuinely are not in a 210-test routine taxonomy, and silence is the correct
 answer for those.
 
-**17.2% resolved is not 17.2% correct.** See below.
+**20.7% resolved is not 20.7% correct.** See below.
 
 ### What the embedding rerank actually does
 
@@ -179,8 +182,8 @@ downloads the sources, verifies their sha256, extracts the PDF text, writes
 
 | Source | | |
 |---|---|---|
-| Narayana — Mazumdar Shaw, Bengaluru | 120pp PDF | 5,866 priced rows |
-| Narayana — Guwahati | 63pp PDF | 1,674 rows, `display_ok=False` |
+| Narayana — Mazumdar Shaw, Bengaluru | 120pp PDF | 5,898 priced rows |
+| Narayana — Guwahati | 63pp PDF | 1,761 rows (31 unparsed, reported), `display_ok=False` |
 | Lal PathLabs sitemaps | XML | 3,099 names |
 | Redcliffe sitemaps | XML | 2,354 names |
 
@@ -219,7 +222,7 @@ column header rather than normalise it away.
 .venv/bin/ratecard evaluate data/eval/labels.csv
 ```
 
-The set is drawn: 500 rows, 357 train / 143 holdout, seeded and reproducible.
+The set is drawn: 500 rows, 345 train / 155 holdout, seeded and reproducible.
 
 **It is stratified, not uniform, and that is load-bearing.** A uniform draw
 from 11,682 names would be dominated by surgical procedures where the answer is
@@ -230,16 +233,19 @@ can teach:
 | stratum | drawn | of | why |
 |---|---|---|---|
 | `exact` | 60 | 268 | are the aliases themselves right? |
-| `lexical` | 140 | 1,603 | the risk surface: confident answers that may be wrong |
-| `abstain_thin_margin` | 100 | 859 | near-misses; the veto layer's home ground |
-| `declared_distinct_neighbour` | 40 | 1,231 | top two are a curated hard-negative pair |
-| `abstain_low_score` | 60 | 707 | did we refuse something we should have taken? |
-| `abstain_no_candidate` | 60 | 6,868 | mostly true negatives; confirms the floor |
+| `lexical` | 140 | 2,030 | the risk surface: confident answers that may be wrong |
+| `abstain_thin_margin` | 100 | 864 | near-misses; the veto layer's home ground |
+| `declared_distinct_neighbour` | 40 | 842 | top two are a curated hard-negative pair |
+| `abstain_low_score` | 60 | 709 | did we refuse something we should have taken? |
+| `abstain_no_candidate` | 60 | 6,895 | mostly true negatives; confirms the floor |
 | `abstain_vetoed` | 40 | 146 | did a hard rule over-fire? |
 
 The consequence: rates measured on this sample are **not** corpus rates.
 `Metrics.corpus_estimate` reweights per-stratum rates by the true sizes above,
-and the naive pooled number is never reported as a corpus figure.
+and the naive pooled number is never reported as a corpus figure. Those sizes
+are written to `labels.csv.population.json` when the sample is drawn — without
+that sidecar no corpus estimate is possible, and `ratecard evaluate` says so
+rather than quoting a stratified rate as a corpus rate.
 
 ### Two things the labelling tool does deliberately
 
@@ -313,3 +319,45 @@ a guessed code is worse than an absent one.
 The real number sits between them and cannot be known until the matcher and the
 labelled set exist. Quoting `reachable` as the exit criterion would be
 dishonest, so the tool refuses to.
+
+
+## Review notes
+
+A review on 2026-09-09 found six bugs. Each now has a regression test in
+`tests/test_regressions.py` that fails against the code as it was.
+
+**`"a"` was a stopword.** In a domain of Vitamin A, Hepatitis A, Influenza A
+and Apo A1. `normalise("Vitamin A")` returned `"vitamin"` and `"vit A"`
+returned `"vit"`, so a bare `VITAMIN` row exact-matched Vitamin A at confidence
+1.0 and needed no review. A stopword list must never eat a single letter here.
+
+**`needs_review` waved through 212 lexical guesses.** It read
+`test_id is None or method != "exact" and confidence < 95.0`, which parses as
+`A or (B and C)`, and WRatio emits exactly 95.0 for a very common partial
+alignment. Among the exempted: `BLOOD CULTURE FOR FUNGUS` resolving to
+`fungal_culture`, whose specimen is tissue rather than blood. Only exact hits
+skip review now.
+
+**The 31 `distinct_from` declarations were inert.** `_apply_vetoes` claimed in
+its docstring to use them and never did; `rules.blocks` appeared only in a log
+message. 109 matches were accepted over a curated-distinct runner-up within 12
+points. A close curated pair is now resolved by *evidence* — a word in the raw
+name belonging to one of the pair and not the other, so `blood urea nitrogen
+bun` resolves on "bun" while a bare `TROPONIN` abstains, carrying nothing to
+separate troponin I from troponin T.
+
+**Phase 00 silently dropped 323 rows.** Long names wrap in the PDF text layer
+and the price run lands on the next line, so the row regex simply missed them —
+291 of Guwahati's 1,792 priced rows, 16% of that source, plus 32 in Bengaluru.
+A second row format also exists in the same document, with the service type
+trailing the prices rather than leading. Both are handled, and anything still
+unparsed is now *counted in the output* instead of vanishing.
+
+**`corpus_estimate` could never return a number.** Stratum populations were
+computed at sample time and thrown away, so the reweighting documented above
+returned `None` on every call and nothing ever called it.
+
+**Dead code describing behaviour that was not there.** `coverage.py` sorted
+surface forms longest-first and explained that this let the more specific study
+win, but the only caller asks `any(...)`, which is order-independent. Plus an
+unused `SKIP` sentinel and an unused `raw_name` parameter.

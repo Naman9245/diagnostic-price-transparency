@@ -50,6 +50,11 @@ from ratecard.taxonomy.loader import Taxonomy
 # Untuned. See module docstring.
 ACCEPT_THRESHOLD = 85.0
 MARGIN = 5.0
+# How much further apart the top two must be when a curator has declared them
+# distinct. Those pairs are confusable by construction - troponin I against
+# troponin T, urea against BUN, plain CT against contrast CT - so the ordinary
+# margin is not enough evidence to commit to one of them. Untuned.
+DISTINCT_MARGIN_MULTIPLIER = 2.0
 # How much the embedding is allowed to move a candidate. Untuned.
 RERANK_WEIGHT = 0.35
 CANDIDATE_LIMIT = 10
@@ -63,6 +68,13 @@ CANDIDATE_FLOOR = 60.0
 # at all. Requiring a shared word of 3+ characters removes that whole class
 # without touching what counts as a good score.
 MIN_SHARED_TOKEN = 3
+
+# Evidence between an already-narrowed pair is judged on a shorter word than
+# candidate generation is. MIN_SHARED_TOKEN guards against noise across 1,046
+# surface forms; by the time two specific tests are being told apart, a short
+# word that belongs to one and not the other is exactly the signal - "mb" is
+# the whole difference between CK-MB and total CPK.
+MIN_EVIDENCE_TOKEN = 2
 
 # ...but the shared word has to actually mean something. "12 GENE PANEL (NGS)"
 # survived the guard above by sharing "panel" with the alias "iron panel",
@@ -126,8 +138,23 @@ class Match:
 
     @property
     def needs_review(self) -> bool:
-        """What Stage 5 writes into price_observation.needs_review."""
-        return self.test_id is None or self.method != "exact" and self.confidence < 95.0
+        """What Stage 5 writes into price_observation.needs_review.
+
+        Only an exact alias hit is trusted without review. Everything else is
+        a guess, however high it scored.
+
+        This was `test_id is None or method != "exact" and confidence < 95.0`,
+        which parses as `A or (B and C)` and so waved through any fuzzy match
+        scoring 95 or better. WRatio emits exactly 95.0 for a very common class
+        of partial alignment, so that exempted 212 lexical guesses across the
+        corpus - including "BLOOD CULTURE FOR FUNGUS" resolving to
+        fungal_culture, whose specimen is tissue rather than blood. Those are
+        precisely the rows a human needs to see before a price reaches anyone.
+
+        Phase 03 may lower this once lexical precision is actually measured.
+        Until then the safe default is the honest one.
+        """
+        return self.method != "exact"
 
 
 @dataclass
@@ -137,6 +164,7 @@ class Matcher:
     margin: float = MARGIN
     candidate_limit: int = CANDIDATE_LIMIT
     candidate_floor: float = CANDIDATE_FLOOR
+    distinct_multiplier: float = DISTINCT_MARGIN_MULTIPLIER
     reranker: object | None = field(default=None, repr=False)
 
     @cached_property
@@ -157,7 +185,7 @@ class Matcher:
         """Best-scoring surface form per canonical test, highest first.
 
         Generation and ranking use different scorers on purpose - see the
-        module docstring. A candidate is kept on its token_sort score, so a
+        module docstring. A candidate is kept on its WRatio score, so a
         canonical name that is merely *contained* in a long raw string no
         longer ties with the one that actually covers it.
         """
@@ -190,14 +218,16 @@ class Matcher:
         return sorted(best.values(), key=lambda c: -c.lexical)[: self.candidate_limit]
 
     # -- layer 2 ---------------------------------------------------------
-    def _apply_vetoes(self, raw_name: str, raw_attrs: Attributes,
+    def _apply_vetoes(self, raw_attrs: Attributes,
                       candidates: list[Candidate]) -> list[Candidate]:
         """Mark candidates the raw name's own words rule out.
 
-        Two sources of veto. The attribute comparison catches what the string
-        says about itself ("plain", "urine", "free"). The taxonomy's
-        declared_distinct catches pairs no string feature separates, by
-        vetoing a lower candidate that a curator said differs from the leader.
+        This layer handles what the *string* asserts about itself - "plain",
+        "urine", "free", "PA and lateral". The taxonomy's declared_distinct
+        pairs are handled separately, in `match`, by widening the margin the
+        top two must clear: a curated pair cannot be vetoed here because
+        neither side is ruled out by the raw name, only made harder to
+        choose between.
         """
         out: list[Candidate] = []
         for candidate in candidates:
@@ -207,6 +237,29 @@ class Matcher:
             out.append(Candidate(candidate.test_id, candidate.surface,
                                  candidate.lexical, candidate.rerank, veto))
         return out
+
+    def _surfaces_of(self, test_id: str) -> set[str]:
+        test = self.taxonomy[test_id]
+        words: set[str] = set()
+        for surface in (test.name, *test.aliases):
+            words |= set(normalise(surface).split())
+        return words
+
+    def _distinctive_evidence(self, query: str, winner: str, loser: str) -> str | None:
+        """A word in the raw name that belongs to one of the pair and not the other.
+
+        This is what separates a curated-distinct pair the raw name *does*
+        resolve from one it does not. "blood urea nitrogen bun" carries the
+        token "bun", which appears among bun's surface forms and nowhere in
+        urea's - so the name has said which of the two it means. A bare
+        "TROPONIN" carries nothing that distinguishes troponin_i from
+        troponin_t, and no amount of scoring should invent it.
+        """
+        query_words = set(query.split())
+        discriminating = self._surfaces_of(winner) - self._surfaces_of(loser)
+        found = sorted(w for w in query_words & discriminating
+                       if len(w) >= MIN_EVIDENCE_TOKEN and w not in GENERIC_TOKENS)
+        return found[0] if found else None
 
     # -- layer 3 ---------------------------------------------------------
     def _rerank(self, raw_name: str, candidates: list[Candidate]) -> list[Candidate]:
@@ -231,7 +284,7 @@ class Matcher:
                          "nothing scored above the candidate floor")
 
         raw_attrs = extract(raw_name)
-        found = self._apply_vetoes(raw_name, raw_attrs, found)
+        found = self._apply_vetoes(raw_attrs, found)
         found = self._rerank(raw_name, found)
         found.sort(key=lambda c: -c.score)
 
@@ -249,13 +302,33 @@ class Matcher:
 
         if len(survivors) > 1:
             second = survivors[1]
-            if top.score - second.score < self.margin:
-                declared = rules.blocks(self.taxonomy[top.test_id],
-                                        self.taxonomy[second.test_id])
-                note = "curated as distinct" if declared else "too close to separate"
+            gap = top.score - second.score
+
+            # A curated-distinct runner-up is the case the declarations exist
+            # for, and until now they were inert: 109 matches across the corpus
+            # were accepted over a curated-distinct runner-up within 12 points,
+            # several at exactly the margin, and the curation changed nothing
+            # but a log message.
+            #
+            # Widening the margin alone was too blunt - it abstained on "BLOOD
+            # UREA NITROGEN (BUN)", where the name says which one it means. So
+            # a close curated pair is resolved by evidence when the raw name
+            # carries a word distinctive to one of them, and only falls back to
+            # demanding a wider gap when it carries none.
+            declared = rules.blocks(self.taxonomy[top.test_id],
+                                    self.taxonomy[second.test_id])
+            if declared:
+                evidence = self._distinctive_evidence(
+                    normalise(raw_name), top.test_id, second.test_id)
+                if evidence is None and gap < self.margin * self.distinct_multiplier:
+                    return Match(raw_name, None, top.score, "abstain_thin_margin",
+                                 f"{top.test_id} {top.score:.1f} vs {second.test_id} "
+                                 f"{second.score:.1f} - curated as distinct and the "
+                                 f"name carries nothing to tell them apart", tuple(found))
+            elif gap < self.margin:
                 return Match(raw_name, None, top.score, "abstain_thin_margin",
                              f"{top.test_id} {top.score:.1f} vs {second.test_id} "
-                             f"{second.score:.1f} - {note}", tuple(found))
+                             f"{second.score:.1f} - too close to separate", tuple(found))
 
         method = "lexical" if top.rerank is None else "embedding"
         return Match(raw_name, top.test_id, top.score, method, None, tuple(found))

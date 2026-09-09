@@ -43,7 +43,13 @@ _SPELLING = {
 # Noise that carries no discriminating power in any source seen so far.
 # Deliberately short. "profile", "panel" and "screen" are NOT here - they are
 # exactly what separates `lipid` from `lipid profile extended`.
-_STOPWORDS = frozenset({"test", "tests", "investigation", "investigations", "the", "a", "of"})
+#
+# "a" is NOT here either, and that is the point of this comment. It was, and it
+# silently collapsed "Vitamin A" to "vitamin" and "vit A" to "vit", so a bare
+# "VITAMIN" row exact-matched Vitamin A at confidence 1.0 and needed no review.
+# Single letters are identity in this domain - Vitamin A, Hepatitis A,
+# Influenza A, Apo A1 - and a stopword list must never eat one.
+_STOPWORDS = frozenset({"test", "tests", "investigation", "investigations", "the", "of"})
 
 _PUNCT = re.compile(r"[^\w\s]+")
 _SPACES = re.compile(r"\s+")

@@ -161,9 +161,57 @@ RE_BENGALURU = re.compile(
 )
 
 # Guwahati: Investigations SVC000345 ECG 370 410 ... (8 columns)
+#
+# The service type leads on most rows and TRAILS on a minority - the text layer
+# reorders the column on some pages, giving
+#     SVC013357 DRUG FOR ABUSE,5 DRUGS 2773 3050 ... Investigations
+# Both are the same table. Requiring a leading type dropped 59 rows.
 RE_GUWAHATI = re.compile(
-    rf"^([A-Za-z][A-Za-z /&-]*?)\s+(SVC\d+)\s+(.+?)\s+({MONEY}(?:\s+{MONEY}){{7}})\s*$", re.MULTILINE
+    rf"^(?:([A-Za-z][A-Za-z /&-]*?)\s+)?(SVC\d+)\s+(.+?)\s+"
+    rf"({MONEY}(?:\s+{MONEY}){{7}})(?:\s+[A-Za-z][A-Za-z /&-]*)?\s*$",
+    re.MULTILINE,
 )
+
+
+# A record starts at a service code. Guwahati prefixes it with a service type.
+RE_RECORD_START = re.compile(r"^(?:[A-Za-z][A-Za-z /&-]*?\s+)?SVC\d+", re.MULTILINE)
+
+
+def _join_wrapped_rows(text: str, row_pattern: re.Pattern[str]) -> str:
+    """Rejoin table rows that the PDF text layer split across lines.
+
+    Long test names wrap, and the price columns end up on the following line:
+
+        Investigations SVC002848
+        SPUTUM FOR AFB 250 275 275 370 370 370 370 370
+
+    The row regex anchors on a full price run, so every wrapped row simply
+    failed to match and vanished. That silently cost 291 of Guwahati's 1,792
+    priced rows - 16% of the source - and 32 of Bengaluru's.
+    """
+    lines = text.splitlines()
+    out: list[str] = []
+    buffer = ""
+
+    for line in lines:
+        starts = RE_RECORD_START.match(line) is not None
+        if buffer and (starts or row_pattern.match(buffer)):
+            out.append(buffer)
+            buffer = line if starts else ""
+            continue
+        if starts:
+            buffer = line
+        elif buffer:
+            # continuation: glue it on and see whether the row completes
+            buffer = f"{buffer} {line.strip()}"
+            if row_pattern.match(buffer):
+                out.append(buffer)
+                buffer = ""
+        else:
+            out.append(line)
+    if buffer:
+        out.append(buffer)
+    return "\n".join(out)
 
 
 def _price(cell: str) -> str:
@@ -180,7 +228,14 @@ def parse_narayana(spec: dict) -> list[dict]:
 
     text = path.read_text(encoding="utf-8", errors="replace")
     pattern = RE_BENGALURU if spec["tiers"] == 11 else RE_GUWAHATI
+    text = _join_wrapped_rows(text, pattern)
     rows = []
+
+    # Every line carrying a service code is a row we are meant to capture.
+    # Anything the pattern misses is reported rather than silently dropped:
+    # a parser that loses 16% of a source without saying so is worse than one
+    # that fails loudly.
+    expected = sum(1 for line in text.splitlines() if re.search(r"SVC\d", line))
 
     for match in pattern.finditer(text):
         if spec["tiers"] == 11:
@@ -188,6 +243,9 @@ def parse_narayana(spec: dict) -> list[dict]:
             service_type = ""
         else:
             service_type, code, name, prices = match.groups()
+            # the leading service type is optional: it trails the prices on
+            # some pages, and is simply absent from the capture there
+            service_type = service_type or ""
 
         name = re.sub(r"\s+", " ", name).strip()
         if not name or name.lower().startswith("service name"):
@@ -203,6 +261,10 @@ def parse_narayana(spec: dict) -> list[dict]:
             "as_of": spec["as_of"],
             "display_ok": str(spec["display_ok"]),
         })
+
+    dropped = expected - len(rows)
+    if dropped > 0:
+        spec["dropped"] = dropped
     return rows
 
 
@@ -263,7 +325,9 @@ def main() -> int:
     rows: list[dict] = []
     for spec in (NARAYANA_BENGALURU, NARAYANA_GUWAHATI):
         parsed = parse_narayana(spec)
-        print(f"  {spec['source']:38} {len(parsed):>6} rows")
+        dropped = spec.get("dropped", 0)
+        note = f"   ({dropped} unparsed)" if dropped else ""
+        print(f"  {spec['source']:38} {len(parsed):>6} rows{note}")
         rows.extend(parsed)
 
     sitemap_rows = parse_sitemaps()
