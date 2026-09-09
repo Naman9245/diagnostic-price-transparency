@@ -250,7 +250,7 @@ def cmd_sample(args: argparse.Namespace) -> int:
 
     print(f"matching {corpus} to bucket by stratum ...\n")
     rows, population = build_sample(taxonomy, corpus, seed=args.seed)
-    write_sample(rows, out)
+    write_sample(rows, out, population)
 
     total_population = sum(population.values())
     print(f"{'stratum':30} {'drawn':>6} {'of':>7}  {'share':>6}   why")
@@ -318,6 +318,17 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
           f"when it refused, was refusing right")
     print(f"\n  HARD-NEGATIVE ACCURACY {pct(metrics.hard_negative_precision())}   "
           f"<- the number worth quoting")
+
+    if metrics.population:
+        print("\n  reweighted to corpus (the sample is stratified, so the figures")
+        print("  above are not corpus rates):")
+        print(f"    precision {pct(metrics.corpus_estimate('precision'))}   "
+              f"recall {pct(metrics.corpus_estimate('recall'))}   "
+              f"coverage {pct(metrics.corpus_estimate('coverage'))}")
+    else:
+        print("\n  ! no population sidecar beside the labels, so no corpus-level")
+        print("  ! estimate is possible. The figures above are SAMPLE rates on a")
+        print("  ! stratified draw - do not quote them as corpus rates.")
 
     by_stratum = metrics.by_stratum()
     if len(by_stratum) > 1:

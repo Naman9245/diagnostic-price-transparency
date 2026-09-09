@@ -1,0 +1,9 @@
+{
+  "abstain_low_score": 709,
+  "abstain_no_candidate": 6895,
+  "abstain_thin_margin": 864,
+  "abstain_vetoed": 147,
+  "declared_distinct_neighbour": 842,
+  "exact": 268,
+  "lexical": 2030
+}

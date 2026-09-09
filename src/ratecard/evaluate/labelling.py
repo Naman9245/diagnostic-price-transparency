@@ -26,8 +26,6 @@ from ratecard.evaluate.sampling import FIELDS
 from ratecard.names import normalise
 from ratecard.taxonomy.loader import Taxonomy
 
-SKIP = object()
-
 
 @dataclass
 class LabelSession:
