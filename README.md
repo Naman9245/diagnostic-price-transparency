@@ -10,6 +10,16 @@ test appears as `COMPLETE BLOOD COUNT (CBC)`, `CBC`, and `Complete Blood Count`
 priced differently. Until names resolve to a canonical entity, no two prices
 can be compared and the product does not exist.
 
+## Documentation
+
+| | |
+|---|---|
+| [docs/product.md](docs/product.md) | what the app does, who it is for, and what it is not |
+| [docs/architecture.md](docs/architecture.md) | the six stages, the data model, and why each choice |
+| [docs/matching.md](docs/matching.md) | **how the ML works** — the four layers, the veto, the evaluation |
+| [docs/curating-the-taxonomy.md](docs/curating-the-taxonomy.md) | how to add a test or an alias |
+| [CLAUDE.md](CLAUDE.md) | working context: current phase, rules, traps already hit |
+
 ## Status
 
 | Phase | | |
