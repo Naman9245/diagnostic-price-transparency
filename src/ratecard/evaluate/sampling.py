@@ -64,6 +64,8 @@ class SampleRow:
     sources: str
     match: Match
 
+    pool: tuple[str, ...] = ()
+
     def candidate_ids(self, limit: int = 8) -> list[str]:
         """Plausible answers, **without** revealing which one the matcher chose.
 
@@ -72,12 +74,16 @@ class SampleRow:
         options is more than anyone can hold in their head - but showing which
         one won, and with what score, is not. They are sorted by id here rather
         than by score for the same reason.
+
+        The pool is built in `build_sample` rather than read off the Match,
+        because two strata had no usable pool at all. `match()` short-circuits
+        on an exact hit and returns no candidates, and every candidate on a
+        vetoed row is blocked - so 100 of the 500 rows displayed nothing and
+        forced a manual search each. Blocked candidates are included here on
+        purpose: they were plausible enough for the scorer to raise, and a
+        labeller rejecting one is doing exactly the intended work.
         """
-        seen: list[str] = []
-        for candidate in self.match.candidates:
-            if not candidate.blocked and candidate.test_id not in seen:
-                seen.append(candidate.test_id)
-        return sorted(seen[:limit])
+        return sorted(self.pool[:limit])
 
 
 def _stratum_of(match: Match, taxonomy: Taxonomy) -> str:
@@ -117,6 +123,16 @@ def build_sample(
         match = matcher.match(name)
         buckets.setdefault(_stratum_of(match, taxonomy), []).append((name, match))
 
+    def pool_for(name: str, match: Match) -> tuple[str, ...]:
+        """Every id worth putting in front of the labeller, blocked included."""
+        ids: list[str] = [c.test_id for c in match.candidates]
+        if not ids:
+            # exact hits and some vetoed rows carry no candidates on the Match
+            ids = [c.test_id for c in matcher.candidates(name)]
+        if match.test_id and match.test_id not in ids:
+            ids.append(match.test_id)
+        return tuple(dict.fromkeys(ids))
+
     population = Counter({stratum: len(rows) for stratum, rows in buckets.items()})
 
     drawn: list[SampleRow] = []
@@ -131,6 +147,7 @@ def build_sample(
                 row_count=counts[name],
                 sources="|".join(sorted(sources.get(name, ()))),
                 match=match,
+                pool=pool_for(name, match),
             ))
 
     rng.shuffle(drawn)
