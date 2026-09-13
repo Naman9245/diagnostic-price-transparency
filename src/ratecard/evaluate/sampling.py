@@ -27,10 +27,13 @@ import random
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from ratecard.normalise import rules
-from ratecard.normalise.matcher import Match, Matcher
 from ratecard.taxonomy.loader import Taxonomy
+
+if TYPE_CHECKING:  # matcher pulls in rapidfuzz; only build_sample needs it
+    from ratecard.normalise.matcher import Match
 
 # stratum -> how many to draw, and why that many.
 STRATA: dict[str, tuple[int, str]] = {
@@ -93,6 +96,8 @@ def build_sample(
     strata: dict[str, tuple[int, str]] | None = None,
 ) -> tuple[list[SampleRow], Counter[str]]:
     """Match the whole corpus, bucket by stratum, then draw each quota."""
+    from ratecard.normalise.matcher import Matcher
+
     quotas = strata or STRATA
     rng = random.Random(seed)
 

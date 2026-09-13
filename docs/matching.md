@@ -128,7 +128,7 @@ it abbreviates Clotting Time at least as often.
 
 **Curated pairs.** Some confusions no structural field separates: Troponin I vs
 T, Widal vs Typhidot, urea vs BUN. The taxonomy declares those explicitly
-(`distinct_from`, 31 pairs), and a close curated pair is resolved by **evidence**
+(`distinct_from`, 34 pairs), and a close curated pair is resolved by **evidence**
 — a word in the raw name belonging to one of the pair and not the other:
 
 - `blood urea nitrogen bun` carries "bun", which appears in `bun`'s surfaces and
