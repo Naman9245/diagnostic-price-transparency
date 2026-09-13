@@ -132,7 +132,9 @@ def test_run_records_choices_and_quits(taxonomy, tmp_path):
          "sources": "a", "candidates": "tsh", "label": ""},
     ])
     session = LabelSession.load(path, labelled_by="tester")
-    answers = iter(["1", "n", "u"])
+    # rows are presented grouped by stratum, so the order is
+    # abstain_no_candidate, exact, lexical - not file order
+    answers = iter(["n", "1", "u"])
     run(session, taxonomy, read=lambda _: next(answers), write=lambda *a, **k: None)
 
     reread = LabelSession.load(path)
@@ -236,3 +238,74 @@ def test_empty_metrics_return_none_not_zero():
     assert m.precision() is None
     assert m.f1() is None
     assert m.hard_negative_precision() is None
+
+
+def test_rows_are_presented_grouped_by_stratum(taxonomy, tmp_path):
+    """Staying in one decision mode is much faster than switching every row."""
+    path = _labels_file(tmp_path, [
+        {"raw_name": "a", "stratum": "lexical", "candidates": "tsh", "label": ""},
+        {"raw_name": "b", "stratum": "exact", "candidates": "cbc", "label": ""},
+        {"raw_name": "c", "stratum": "lexical", "candidates": "esr", "label": ""},
+    ])
+    session = LabelSession.load(path)
+    shown: list[str] = []
+
+    def read(_):
+        return "n"
+
+    def write(*args, **kwargs):
+        text = " ".join(str(a) for a in args)
+        for name in ("a", "b", "c"):
+            if f"\n    {name}\n" in text:
+                shown.append(name)
+
+    run(session, taxonomy, read=read, write=write)
+    assert shown == ["b", "a", "c"], f"expected exact first, got {shown}"
+
+
+def test_undo_restores_the_previous_row(taxonomy, tmp_path):
+    """Without this, a misclick meant living with it or restarting."""
+    path = _labels_file(tmp_path, [
+        {"raw_name": "a", "stratum": "lexical", "candidates": "tsh|esr", "label": ""},
+        {"raw_name": "b", "stratum": "lexical", "candidates": "cbc", "label": ""},
+    ])
+    session = LabelSession.load(path)
+    answers = iter(["1", "z", "2", "1"])
+    run(session, taxonomy, read=lambda _: next(answers), write=lambda *a, **k: None)
+
+    reread = LabelSession.load(path)
+    assert reread.rows[0]["label"] == "esr", "undo then re-pick should land on the 2nd option"
+    assert reread.rows[1]["label"] == "cbc"
+
+
+def test_undo_with_nothing_to_undo_is_harmless(taxonomy, tmp_path):
+    path = _labels_file(tmp_path, [
+        {"raw_name": "a", "stratum": "lexical", "candidates": "tsh", "label": ""},
+    ])
+    session = LabelSession.load(path)
+    answers = iter(["z", "1"])
+    run(session, taxonomy, read=lambda _: next(answers), write=lambda *a, **k: None)
+    assert LabelSession.load(path).rows[0]["label"] == "tsh"
+
+
+def test_dot_repeats_the_previous_label(taxonomy, tmp_path):
+    """Runs of near-identical rows are common - 'USG left/right inguinal region'."""
+    path = _labels_file(tmp_path, [
+        {"raw_name": "a", "stratum": "abstain_no_candidate", "candidates": "", "label": ""},
+        {"raw_name": "b", "stratum": "abstain_no_candidate", "candidates": "", "label": ""},
+        {"raw_name": "c", "stratum": "abstain_no_candidate", "candidates": "", "label": ""},
+    ])
+    session = LabelSession.load(path)
+    answers = iter(["n", ".", "."])
+    run(session, taxonomy, read=lambda _: next(answers), write=lambda *a, **k: None)
+    assert [r["label"] for r in LabelSession.load(path).rows] == ["none", "none", "none"]
+
+
+def test_dot_before_any_label_is_rejected(taxonomy, tmp_path):
+    path = _labels_file(tmp_path, [
+        {"raw_name": "a", "stratum": "lexical", "candidates": "tsh", "label": ""},
+    ])
+    session = LabelSession.load(path)
+    answers = iter([".", "1"])
+    run(session, taxonomy, read=lambda _: next(answers), write=lambda *a, **k: None)
+    assert LabelSession.load(path).rows[0]["label"] == "tsh"
