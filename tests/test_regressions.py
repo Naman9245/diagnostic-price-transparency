@@ -5,6 +5,8 @@ stays readable.
 """
 
 import csv
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -141,3 +143,69 @@ def test_the_real_sample_has_its_sidecar():
         pytest.skip("no sample drawn")
     assert population_path(labels).exists(), "sample drawn without its population"
     assert sum(load_population(labels).values()) > 0
+
+
+# --- bug 7: the CLI hard-required rapidfuzz for every subcommand -----------
+
+_BLOCK_RAPIDFUZZ = """
+import sys
+
+class _Blocker:
+    def find_module(self, name, path=None):
+        return self if name == "rapidfuzz" or name.startswith("rapidfuzz.") else None
+    def find_spec(self, name, path=None, target=None):
+        if name == "rapidfuzz" or name.startswith("rapidfuzz."):
+            raise ImportError("blocked for test")
+        return None
+
+sys.meta_path.insert(0, _Blocker())
+for mod in [m for m in sys.modules if m.startswith("rapidfuzz")]:
+    del sys.modules[mod]
+
+from ratecard.cli import main
+raise SystemExit(main({argv!r}))
+"""
+
+
+def _run_without_rapidfuzz(argv: list[str]):
+    """Run a CLI command in a subprocess where rapidfuzz cannot be imported."""
+    return subprocess.run(
+        [sys.executable, "-c", _BLOCK_RAPIDFUZZ.format(argv=argv)],
+        capture_output=True, text=True, check=False,
+        cwd=Path(__file__).resolve().parent.parent,
+    )
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [["validate"], ["stats"], ["lookup", "haemogram"],
+     ["check", "cbc", "rbc_count"], ["hard-negatives"]],
+)
+def test_taxonomy_commands_run_without_rapidfuzz(argv):
+    """The README promises Phase 01 runs on stdlib plus PyYAML. cli.py imported
+    Matcher at module scope, so `ratecard validate` died on ModuleNotFoundError
+    on any clean install."""
+    result = _run_without_rapidfuzz(argv)
+    assert result.returncode == 0, f"{argv} failed:\n{result.stderr[-800:]}"
+    assert "rapidfuzz" not in result.stderr
+
+
+def test_matcher_commands_fail_with_a_usable_message(tmp_path):
+    """Commands that genuinely need it must say so, not emit a traceback."""
+    result = _run_without_rapidfuzz(["match", "data/corpus/phase00.csv"])
+    assert result.returncode != 0
+    assert "pip install" in result.stderr
+    assert "Traceback" not in result.stderr
+
+
+def test_sampling_module_imports_without_rapidfuzz():
+    """evaluate/sampling.py was the second eager path to rapidfuzz."""
+    script = _BLOCK_RAPIDFUZZ.split("from ratecard.cli")[0] + (
+        "import ratecard.evaluate.sampling as s\n"
+        "assert s.STRATA\n"
+        "import sys; assert 'rapidfuzz' not in sys.modules\n"
+    )
+    result = subprocess.run([sys.executable, "-c", script], capture_output=True,
+                            text=True, check=False,
+                            cwd=Path(__file__).resolve().parent.parent)
+    assert result.returncode == 0, result.stderr[-800:]

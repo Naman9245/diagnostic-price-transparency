@@ -26,7 +26,6 @@ from ratecard.evaluate.metrics import evaluate as run_evaluate
 from ratecard.evaluate.sampling import STRATA, build_sample, write_sample
 from ratecard.names import normalise
 from ratecard.normalise import explain
-from ratecard.normalise.matcher import Matcher
 from ratecard.taxonomy import ValidationError, load
 from ratecard.taxonomy.coverage import analyse, hard_negative_pairs
 from ratecard.taxonomy.loader import collect_warnings
@@ -37,6 +36,27 @@ EXIT_INVALID = 1
 EXIT_BELOW_TARGET = 2
 
 COVERAGE_TARGET = 80.0
+
+
+def _require_matcher():
+    """Import the Matcher class, or exit with something a human can act on.
+
+    `validate`, `stats`, `lookup`, `check` and `hard-negatives` are pure
+    taxonomy operations and must keep working on a machine with nothing but
+    stdlib and PyYAML - that promise is in the README, and importing the
+    matcher at module scope quietly broke it for every subcommand.
+    """
+    try:
+        from ratecard.normalise.matcher import Matcher
+    except ImportError as exc:
+        print(f"This command needs the matcher, which needs rapidfuzz: {exc}\n"
+              f"  pip install -e '.[normalise]'", file=sys.stderr)
+        raise SystemExit(EXIT_INVALID) from exc
+    return Matcher
+
+
+def _matcher_or_die(taxonomy, reranker=None):
+    return _require_matcher()(taxonomy, reranker=reranker)
 
 
 def _load_or_die():
@@ -179,7 +199,7 @@ def cmd_match(args: argparse.Namespace) -> int:
         if reranker is None:
             print("  ! sentence-transformers not installed; running lexical only\n",
                   file=sys.stderr)
-    matcher = Matcher(taxonomy, reranker=reranker)
+    matcher = _matcher_or_die(taxonomy, reranker)
     with corpus.open(newline="", encoding="utf-8") as handle:
         names = [r["raw_name"].strip() for r in csv.DictReader(handle) if r.get("raw_name")]
 
@@ -248,6 +268,7 @@ def cmd_sample(args: argparse.Namespace) -> int:
               f"Pass --force only if you are certain.", file=sys.stderr)
         return EXIT_INVALID
 
+    _require_matcher()  # fail with a usable message, not a traceback
     print(f"matching {corpus} to bucket by stratum ...\n")
     rows, population = build_sample(taxonomy, corpus, seed=args.seed)
     write_sample(rows, out, population)

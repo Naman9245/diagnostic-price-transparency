@@ -32,9 +32,16 @@ python scripts/phase00_seed_corpus.py --fetch    # rebuild the corpus
 .venv/bin/python -m pytest tests/ -q && .venv/bin/ruff check src tests scripts
 ```
 
-Phase 01 runs on stdlib + PyYAML alone. Heavier stages are optional extras.
+Phase 01 runs on stdlib + PyYAML alone, and that is enforced, not just
+documented: `validate`, `stats`, `lookup`, `check` and `hard-negatives` must
+keep working with nothing else installed. The matcher is imported lazily to
+keep it true — do not hoist `from ratecard.normalise.matcher import ...` to
+module scope in `cli.py` or `evaluate/sampling.py`.
+
 Install torch from the **CPU index** — there is no NVIDIA card on this machine
 and the default wheel drags in ~3GB of unused CUDA.
+
+`AGENTS.md` is a symlink to this file. Edit this one.
 
 ## Rules that must not be broken
 
@@ -89,6 +96,15 @@ Every one of these has a regression test in `tests/test_regressions.py`.
 - **The corpus is a whole hospital catalogue**, not a lab menu: surgeries,
   chemotherapy, bed charges. Low coverage is expected and correct; ~59% of names
   have no answer in a 210-test routine taxonomy.
+- **Optional deps must stay optional.** `cli.py` imported `Matcher` at module
+  scope, so `ratecard validate` died with `ModuleNotFoundError: rapidfuzz` on
+  every clean install, breaking a promise the README makes. Tested in a
+  subprocess with the import blocked.
+- **A docstring is not a guarantee.** Twice now a docstring has described
+  behaviour the code did not have — `_apply_vetoes` claimed to use
+  `distinct_from` and never did, and `fetch_raw` claimed never to overwrite in
+  place while `--force` did exactly that. When one says something load-bearing,
+  check the code does it.
 
 ## Known-unfinished
 
@@ -97,8 +113,9 @@ Every one of these has a regression test in `tests/test_regressions.py`.
   does not map cleanly. Imaging deliberately carries none.
 - **31 Guwahati rows still fail to parse** (merged double-records). Reported in
   the script's output, not hidden.
-- Repo is named `hopital_project` (typo, and the old "price prediction" framing).
-  Worth renaming.
+- Local folder is still `hopital_project` (typo). The GitHub remote is
+  `Naman9245/diagnostic-price-transparency`, private. Renaming the folder is
+  safe — nothing in the code depends on it.
 
 ## Layout
 

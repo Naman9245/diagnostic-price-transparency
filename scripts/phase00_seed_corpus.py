@@ -30,6 +30,7 @@ import hashlib
 import re
 import sys
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -101,11 +102,52 @@ SITEMAPS = [
 UA = "ratecard-research/0.1 (student project; contact via repo)"
 
 
+class SourceChanged(RuntimeError):
+    """A publisher's document no longer matches the hash it was parsed against."""
+
+
+def _dated_sidecar(target: Path) -> Path:
+    return target.with_name(
+        f"{target.stem}.fetched-{datetime.now(UTC).date().isoformat()}{target.suffix}"
+    )
+
+
+def _place(target: Path, data: bytes, expected: str) -> str:
+    """Put freshly-fetched bytes somewhere, without ever clobbering a document.
+
+    The registry pins a sha256 because the parsers were written against exactly
+    that document - the 11-column Bengaluru layout, the 8-column Guwahati one.
+    If a publisher reissues the file, the right response is to stop and look at
+    it, not to keep going and hope the columns are where they used to be.
+
+    So: matching bytes land at the canonical path, and differing bytes land in
+    a dated sidecar and raise. This function is what makes "immutable raw
+    store" true rather than aspirational - the previous version overwrote in
+    place on --force and merely *printed* CHANGED SINCE LAST FETCH before
+    carrying on with the new document.
+    """
+    digest = hashlib.sha256(data).hexdigest()
+    if digest == expected:
+        target.write_bytes(data)
+        return digest
+
+    sidecar = _dated_sidecar(target)
+    sidecar.write_bytes(data)
+    raise SourceChanged(
+        f"{target.name} has changed at the publisher.\n"
+        f"  expected sha256 {expected}\n"
+        f"  received sha256 {digest}\n"
+        f"  the new document is saved at {sidecar}, and {target.name} is untouched.\n"
+        f"  Inspect it, confirm the table layout, then update the registry hash "
+        f"in this script and rename the sidecar into place."
+    )
+
+
 def fetch_raw(force: bool = False) -> None:
     """Download every source document into the immutable raw store.
 
     Nothing is ever overwritten in place: a changed sha256 means a new document
-    and should become a new dated file, not a silent mutation of this one.
+    and becomes a new dated file, not a silent mutation of this one.
     """
     import httpx
 
@@ -116,19 +158,29 @@ def fetch_raw(force: bool = False) -> None:
         for spec in (NARAYANA_BENGALURU, NARAYANA_GUWAHATI):
             target = spec["pdf"]
             if target.exists() and not force:
-                print(f"  cached  {target.name}")
-            else:
-                print(f"  GET     {spec['url']}")
-                target.write_bytes(client.get(spec["url"]).content)
-            digest = hashlib.sha256(target.read_bytes()).hexdigest()
-            status = "ok" if digest == spec["sha256"] else "CHANGED SINCE LAST FETCH"
-            print(f"          sha256 {digest[:16]}... {status}")
+                digest = hashlib.sha256(target.read_bytes()).hexdigest()
+                if digest != spec["sha256"]:
+                    raise SourceChanged(
+                        f"{target.name} on disk does not match the registry hash.\n"
+                        f"  expected {spec['sha256']}\n"
+                        f"  on disk  {digest}\n"
+                        f"  This is not the document the parser was written against. "
+                        f"Delete it and re-fetch, or update the registry."
+                    )
+                print(f"  cached  {target.name}  sha256 {digest[:16]}... ok")
+                continue
+
+            print(f"  GET     {spec['url']}")
+            digest = _place(target, client.get(spec["url"]).content, spec["sha256"])
+            print(f"          sha256 {digest[:16]}... ok")
 
         for name, url in SITEMAP_URLS.items():
             target = RAW / "sitemaps" / name
             if target.exists() and not force:
                 continue
             print(f"  GET     {url}")
+            # Sitemaps are expected to drift - catalogues grow - so they carry
+            # no pinned hash and are simply refreshed.
             target.write_bytes(client.get(url).content)
             time.sleep(1)  # be a polite guest
 
@@ -317,7 +369,11 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.fetch or args.force:
-        fetch_raw(force=args.force)
+        try:
+            fetch_raw(force=args.force)
+        except SourceChanged as exc:
+            print(f"\nSTOPPED: {exc}", file=sys.stderr)
+            return 2
         for spec in (NARAYANA_BENGALURU, NARAYANA_GUWAHATI):
             extract_pdf_text(spec)
         print()

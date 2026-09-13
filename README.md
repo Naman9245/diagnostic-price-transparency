@@ -25,7 +25,7 @@ can be compared and the product does not exist.
 | Phase | | |
 |---|---|---|
 | 00 Seed corpus | rebuilt 4 Sep | 13,112 rows, 11,648 distinct names, 4 source documents |
-| 01 Canonical taxonomy | in progress | 210 tests, validating, **exit criterion needs restating — see below** |
+| 01 Canonical taxonomy | done | 210 tests, validating; exit criterion restated — see below |
 | 02 The matcher | built, untuned | 20.7% of rows resolved, 205/210 canonical tests hit |
 | 03 Label and evaluate | tooling ready, 0/500 labelled | **the deliverable** |
 
@@ -235,7 +235,7 @@ column header rather than normalise it away.
 The set is drawn: 500 rows, 345 train / 155 holdout, seeded and reproducible.
 
 **It is stratified, not uniform, and that is load-bearing.** A uniform draw
-from 11,682 names would be dominated by surgical procedures where the answer is
+from 11,755 names would be dominated by surgical procedures where the answer is
 "none", and 350 labels proving the matcher declines to match `ABOVE ELBOW
 AMPUTATION` teach nothing. Each stratum is drawn to a quota chosen for what it
 can teach:
@@ -297,7 +297,7 @@ immunohistochemistry markers). A 210-test routine taxonomy measured against all
 
 ```
 exact       381 rows   2.9%   correct by construction
-reachable  2232 rows  17.2%   containment heuristic, over-counts
+reachable  2223 rows  17.0%   containment heuristic, over-counts
 ```
 
 Both numbers are honest and neither is the interesting one. The useful measure
