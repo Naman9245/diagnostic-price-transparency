@@ -86,7 +86,7 @@
   kind: lab
   specimen: serum
   fasting_required: false
-  loinc: "8099-8"
+  loinc: "18332-7"
   distinct_from: [anti_thyroglobulin]
   aliases: [anti TPO, anti-TPO, TPO antibody, thyroid peroxidase antibody,
             anti thyroid peroxidase, ATPO, anti TPO antibody]
@@ -97,7 +97,7 @@
   kind: lab
   specimen: serum
   fasting_required: false
-  loinc: "8098-0"
+  loinc: "8098-6"
   aliases: [anti TG, anti thyroglobulin, thyroglobulin antibody,
             ATG antibody, anti thyroglobulin antibody]
 
@@ -206,7 +206,7 @@
   kind: lab
   specimen: serum
   fasting_required: false
-  loinc: "38476-0"
+  loinc: "38476-8"
   aliases: [AMH, anti mullerian hormone, anti-Mullerian hormone,
             serum AMH]
 
@@ -258,7 +258,7 @@
   kind: lab
   specimen: serum
   fasting_required: false
-  loinc: "1763-6"
+  loinc: "1763-2"
   aliases: [aldosterone, serum aldosterone, plasma aldosterone,
             aldosterone level]
 
@@ -268,7 +268,7 @@
   kind: lab
   specimen: serum
   fasting_required: false
-  loinc: "1988-1"
+  loinc: "1992-7"
   aliases: [calcitonin, serum calcitonin, calcitonin level]
 
 - id: inhibin_b

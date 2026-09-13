@@ -100,6 +100,6 @@
   kind: lab
   specimen: tissue
   fasting_required: false
-  loinc: "580-4"
+  loinc: "578-5"
   aliases: [fungal culture, culture for fungus, KOH and fungal culture,
             mycology culture]

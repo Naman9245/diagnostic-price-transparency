@@ -49,7 +49,7 @@
   kind: lab
   specimen: serum
   fasting_required: false
-  loinc: "8061-8"
+  loinc: "29953-7"
   aliases: [ANA, antinuclear antibody, ANA IF, anti nuclear antibody,
             ANA by IFA]
 
