@@ -176,7 +176,7 @@
   kind: lab
   specimen: serum
   fasting_required: false
-  loinc: "1979-4"
+  loinc: "2742-5"
   aliases: [ACE, angiotensin converting enzyme, serum ACE,
             ACE (angiotensin converting enzyme), angiotensin 1 converting enzyme]
 
@@ -186,7 +186,7 @@
   kind: lab
   specimen: serum
   fasting_required: false
-  loinc: "1798-9"
+  loinc: "47826-3"
   aliases: [ADA, adenosine deaminase, serum ADA, ADA level]
 
 - id: aldolase
@@ -204,7 +204,7 @@
   kind: lab
   specimen: serum
   fasting_required: false
-  loinc: "1834-2"
+  loinc: "1715-2"
   aliases: [acid phosphatase, serum acid phosphatase,
             total acid phosphatase, ACP]
 
@@ -232,7 +232,7 @@
   kind: lab
   specimen: serum
   fasting_required: false
-  loinc: "1558-9"
+  loinc: "33805-3"
   aliases: [fructosamine, serum fructosamine, glycated albumin]
 
 - id: absolute_neutrophil_count

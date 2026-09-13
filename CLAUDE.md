@@ -100,6 +100,12 @@ Every one of these has a regression test in `tests/test_regressions.py`.
   scope, so `ratecard validate` died with `ModuleNotFoundError: rapidfuzz` on
   every clean install, breaking a promise the README makes. Tested in a
   subprocess with the import blocked.
+- **A model-recalled identifier is probably wrong.** Of 147 LOINC codes seeded
+  from memory, 12 did not exist and 2 pointed at the wrong analyte — `ace` was
+  Biopterin in 24-hour urine, and the two Coombs codes were on each other's
+  tests. Most fabrications were *one digit off* a real code (`38476-0` for
+  `38476-8`), which is exactly the shape that survives a plausibility check.
+  Never hand-write an external identifier; look it up.
 - **A docstring is not a guarantee.** Twice now a docstring has described
   behaviour the code did not have — `_apply_vetoes` claimed to use
   `distinct_from` and never did, and `fetch_raw` claimed never to overwrite in
@@ -108,9 +114,11 @@ Every one of these has a regression test in `tests/test_regressions.py`.
 
 ## Known-unfinished
 
-- **LOINC codes are unverified** — seeded from model memory, not a fetched
-  LOINC release. Check against loinc.org before Phase 03 and null anything that
-  does not map cleanly. Imaging deliberately carries none.
+- ~~LOINC codes are unverified~~ **done 2026-09-13.** All 145 checked against
+  the NLM Clinical Table Search Service (free, no licence key, unlike
+  fhir.loinc.org). 14 were wrong and are fixed, 2 nulled. Re-check with
+  `python scripts/verify_loinc.py` — a clean run reports 0 and 0. Imaging
+  deliberately carries none.
 - **31 Guwahati rows still fail to parse** (merged double-records). Reported in
   the script's output, not hidden.
 - Local folder is still `hopital_project` (typo). The GitHub remote is

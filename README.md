@@ -312,11 +312,27 @@ The criterion needs restating before Phase 01 can be called done. Chasing 80%
 of *this* corpus would mean curating thousands of oncology and surgical entries
 for a product about routine prescriptions, which is the wrong project.
 
-**LOINC codes are unverified.** Most lab tests carry a code, seeded from
-memory rather than from a fetched LOINC release. They must be checked against
-loinc.org before Phase 03, and any that do not map cleanly should be set to
-null rather than approximated. Imaging carries no codes at all, deliberately —
-a guessed code is worse than an absent one.
+**~~LOINC codes are unverified~~ — done.** All 145 were checked on 2026-09-13
+against the NLM Clinical Table Search Service, a free public endpoint over the
+official LOINC table. The result argues for the rule rather than against it:
+
+```
+12 codes did not exist in LOINC at all
+ 2 pointed at the wrong analyte
+```
+
+`ace` was `1979-4`, which is *Biopterin in 24-hour urine*. The two Coombs codes
+were on each other's tests, and that one slipped past name-similarity triage
+because "Direct antiglobulin test" and "Indirect Coombs Test" share enough
+words. Most fabrications were **one digit off** a real code — `38476-0` for
+`38476-8`, `32546-6` for `32546-4`, `1763-6` for `1763-2` — which is precisely
+the shape that survives a plausibility check and fails a lookup.
+
+14 are corrected, 2 nulled where no confident match was found, and 15 more are
+recorded as reviewed synonyms (LOINC names the analyte, Indian rate cards name
+the assay: VDRL is *Reagin Ab by RPR*, calcitriol is *1,25-dihydroxyvitamin D*).
+`python scripts/verify_loinc.py` re-checks the lot; a clean run reports zero
+and zero. Imaging still carries no codes, deliberately.
 
 ## Coverage is reported as two numbers
 

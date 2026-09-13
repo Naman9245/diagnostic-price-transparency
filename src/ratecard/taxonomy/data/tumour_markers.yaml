@@ -17,7 +17,6 @@
   kind: lab
   specimen: serum
   fasting_required: false
-  loinc: "2858-9"
   aliases: [free PSA, PSA free, free prostate specific antigen, fPSA]
   notes: HARD NEGATIVE vs psa_total.
 
@@ -72,5 +71,5 @@
   kind: lab
   specimen: serum
   fasting_required: false
-  loinc: "33325-3"
+  loinc: "9811-1"
   aliases: [chromogranin A, serum chromogranin A, CgA, chromogranin a level]

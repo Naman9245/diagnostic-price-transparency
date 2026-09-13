@@ -155,7 +155,7 @@
   kind: lab
   specimen: whole_blood
   fasting_required: false
-  loinc: "32546-6"
+  loinc: "32546-4"
   aliases: [G6PD, G6PD screening, glucose 6 phosphate dehydrogenase,
             G6PD quantitative, G 6 PD]
 
@@ -165,7 +165,7 @@
   kind: lab
   specimen: whole_blood
   fasting_required: false
-  loinc: "1000-9"
+  loinc: "1006-6"
   distinct_from: [coombs_indirect]
   aliases: [DCT, direct coombs, direct antiglobulin test, DAT,
             coombs test direct]
@@ -177,7 +177,6 @@
   kind: lab
   specimen: whole_blood
   fasting_required: false
-  loinc: "1006-6"
   aliases: [ICT, indirect coombs, indirect antiglobulin test, IAT,
             coombs test indirect]
   notes: HARD NEGATIVE vs coombs_direct.
