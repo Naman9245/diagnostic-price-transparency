@@ -309,3 +309,84 @@ def test_dot_before_any_label_is_rejected(taxonomy, tmp_path):
     answers = iter([".", "1"])
     run(session, taxonomy, read=lambda _: next(answers), write=lambda *a, **k: None)
     assert LabelSession.load(path).rows[0]["label"] == "tsh"
+
+
+# --- confidence intervals -------------------------------------------------
+
+def test_wilson_stays_inside_zero_and_one():
+    """The normal approximation runs outside [0,1] at extreme proportions,
+    which is why these strata use Wilson instead."""
+    from ratecard.evaluate.metrics import wilson
+
+    for successes, total in [(0, 10), (10, 10), (1, 3), (26, 26), (0, 1)]:
+        low, high = wilson(successes, total)
+        assert 0.0 <= low <= high <= 1.0
+
+
+def test_wilson_needs_a_sample():
+    from ratecard.evaluate.metrics import wilson
+
+    assert wilson(0, 0) is None
+
+
+def test_interval_narrows_as_n_grows():
+    from ratecard.evaluate.metrics import wilson
+
+    widths = []
+    for n in (10, 50, 200, 1000):
+        low, high = wilson(round(0.9 * n), n)
+        widths.append(high - low)
+    assert widths == sorted(widths, reverse=True)
+
+
+def test_estimate_reports_n_and_width(scored):
+    m = evaluate(scored, split="train")
+    estimate = m.estimate("precision")
+    assert estimate.total == 2
+    assert estimate.value == pytest.approx(0.5)
+    assert estimate.width > 0.5, "two rows cannot support a narrow interval"
+
+
+def test_point_estimate_and_interval_cannot_disagree(scored):
+    """Both derive from ratio(), deliberately - they used to be counted twice."""
+    m = evaluate(scored, split="train")
+    for metric in ("precision", "recall", "coverage", "abstention_precision",
+                   "hard_negative_precision"):
+        successes, total = m.ratio(metric)
+        estimate = m.estimate(metric)
+        assert (estimate.successes, estimate.total) == (successes, total)
+        if total:
+            assert estimate.low <= estimate.value <= estimate.high
+
+
+def test_ratio_rejects_an_unknown_metric(scored):
+    with pytest.raises(ValueError, match="unknown metric"):
+        evaluate(scored, split="train").ratio("nonsense")
+
+
+def test_sample_size_planning_is_conservative_at_extremes():
+    """An observed 100% has p(1-p)=0, which would claim no more labels are
+    needed. Proving a high rate tightly takes more data, not less."""
+    from ratecard.evaluate.metrics import Estimate, wilson
+
+    low, high = wilson(8, 8)
+    perfect = Estimate(8, 8, low, high)
+    assert perfect.labels_needed_for(0.10) > 100
+
+    low, high = wilson(50, 100)
+    middling = Estimate(50, 100, low, high)
+    assert middling.labels_needed_for(0.10) > 0
+
+
+def test_no_more_labels_needed_once_wide_enough():
+    from ratecard.evaluate.metrics import Estimate, wilson
+
+    low, high = wilson(900, 1000)
+    assert Estimate(900, 1000, low, high).labels_needed_for(0.50) == 0
+
+
+def test_estimate_renders_with_and_without_an_interval():
+    from ratecard.evaluate.metrics import Estimate
+
+    assert str(Estimate(0, 0)) == "     —"
+    assert "n=26" in str(Estimate(24, 26, 0.76, 0.98))

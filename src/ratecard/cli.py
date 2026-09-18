@@ -328,17 +328,30 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
     def pct(value):
         return "     —" if value is None else f"{100 * value:5.1f}%"
 
-    print(f"\n  precision            {pct(metrics.precision())}   "
-          f"of the answers it gave, how many were right")
-    print(f"  recall               {pct(metrics.recall())}   "
-          f"of answerable rows, how many it got")
-    print(f"  F1                   {pct(metrics.f1())}")
-    print(f"  coverage             {pct(metrics.coverage())}   "
-          f"how often it answered at all")
-    print(f"  abstention precision {pct(metrics.abstention_precision())}   "
-          f"when it refused, was refusing right")
-    print(f"\n  HARD-NEGATIVE ACCURACY {pct(metrics.hard_negative_precision())}   "
-          f"<- the number worth quoting")
+    print("\n  rate                 estimate  95% interval   what it means")
+    for metric, blurb in [
+        ("precision", "of the answers it gave, how many were right"),
+        ("recall", "of answerable rows, how many it got"),
+        ("coverage", "how often it answered at all"),
+        ("abstention_precision", "when it refused, was refusing right"),
+    ]:
+        print(f"  {metric.replace('_', ' '):20} {metrics.estimate(metric)!s:28} {blurb}")
+    print(f"  {'F1':20} {pct(metrics.f1())}")
+
+    hard = metrics.estimate("hard_negative_precision")
+    print(f"\n  HARD-NEGATIVE ACCURACY {hard!s}   <- the number worth quoting")
+
+    # An interval this wide is not a finding. Say so rather than let a point
+    # estimate off 26 rows get quoted as though it were measured.
+    wide = [(m, e) for m in ("precision", "hard_negative_precision")
+            if (e := metrics.estimate(m)).width and e.width > 0.20]
+    if wide:
+        print("\n  ! too few labels to conclude:")
+        for metric, estimate in wide:
+            need = estimate.labels_needed_for(0.10)
+            print(f"  !   {metric.replace('_', ' '):24} interval is "
+                  f"{100 * estimate.width:.0f} points wide at n={estimate.total}"
+                  + (f"; ~{need} more labels would halve it" if need else ""))
 
     if metrics.population:
         print("\n  reweighted to corpus (the sample is stratified, so the figures")

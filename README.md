@@ -275,6 +275,29 @@ single label, and the session resumes from the first unlabelled row. `s` skips,
 Five outcomes, because "accuracy" hides the distinction that matters:
 `correct_match`, `wrong_match`, `missed`, `correct_abstention`, `unsure`.
 
+Every rate carries a **95% Wilson interval and its n**, because the strata are
+small and a bare percentage off 26 rows is not a measurement. Wilson rather
+than the normal approximation: these proportions sit near 1, where the normal
+interval misbehaves and can run outside [0, 1] entirely.
+
+`evaluate` works on a partly-labelled file, so the numbers sharpen as you go
+rather than arriving all at once at row 500. It refuses to let a wide interval
+pass as a finding — anything over 20 points wide is called out as too few
+labels to conclude, with an estimate of how many more would halve it.
+
+What the sample can actually buy, once the train split is labelled:
+
+| measure | n | interval at p≈0.90 |
+|---|---|---|
+| overall precision | 143 | ±5 pts |
+| hard-negative accuracy | 96 | ±6 pts |
+| abstention precision | 106 | ±6 pts |
+| `declared_distinct` alone | 26 | **±12 pts** |
+
+The first three are quotable. The last is not — 26 rows cannot support a
+separate headline number, so `declared_distinct` is reported only as part of
+the hard slice, not on its own.
+
 A missed row shows the user nothing. A wrong row shows them a confident price
 for the wrong test — the one failure this project exists to prevent. So
 precision leads, and the headline claim should be a precision figure at a
