@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -33,6 +34,80 @@ UNSURE_LABEL = "unsure"
 
 Outcome = str
 OUTCOMES = ("correct_match", "wrong_match", "missed", "correct_abstention", "unsure")
+
+
+# 95% two-sided. z for other levels: 1.645 (90%), 2.576 (99%).
+Z_95 = 1.959964
+
+
+def wilson(successes: int, total: int, z: float = Z_95) -> tuple[float, float] | None:
+    """Wilson score interval for a proportion.
+
+    Chosen over the normal approximation because the strata here are small -
+    declared_distinct_neighbour has 26 rows in train - and the normal interval
+    misbehaves badly at small n and at proportions near 0 or 1, where it can
+    run outside [0, 1] entirely. Wilson stays inside the range and keeps
+    roughly nominal coverage down to single digits.
+    """
+    if total <= 0:
+        return None
+    p = successes / total
+    denominator = 1 + z * z / total
+    centre = (p + z * z / (2 * total)) / denominator
+    margin = z * math.sqrt(p * (1 - p) / total + z * z / (4 * total * total)) / denominator
+    return max(0.0, centre - margin), min(1.0, centre + margin)
+
+
+@dataclass(frozen=True, slots=True)
+class Estimate:
+    """A rate with the uncertainty that the sample size actually supports.
+
+    A bare "94% precision" off 26 labelled rows is not a measurement, it is a
+    point estimate with a interval roughly 30 points wide. Reporting the
+    interval is the difference between a number that survives a follow-up
+    question and one that does not.
+    """
+
+    successes: int
+    total: int
+    low: float | None = None
+    high: float | None = None
+
+    @property
+    def value(self) -> float | None:
+        return self.successes / self.total if self.total else None
+
+    @property
+    def width(self) -> float | None:
+        if self.low is None or self.high is None:
+            return None
+        return self.high - self.low
+
+    def labels_needed_for(self, target_width: float) -> int:
+        """Roughly how many more labels would narrow the interval to `target_width`.
+
+        Inverts the normal-approximation width, which is close enough for
+        planning: n ~= 4 z^2 p(1-p) / w^2. Returns 0 when already there, and
+        assumes the observed proportion holds - it will move.
+        """
+        p = self.value
+        if p is None or target_width <= 0:
+            return 0
+        # Plan against a clamped proportion. An observed 100% off 8 rows has
+        # p(1-p) = 0, which would claim almost no further labels are needed -
+        # nonsense, since proving a high rate tightly takes *more* data, not
+        # less. Clamping to [0.2, 0.8] keeps the estimate conservative while
+        # still responding to where the rate actually seems to be sitting.
+        clamped = min(max(p, 0.2), 0.8)
+        required = math.ceil(4 * Z_95 * Z_95 * clamped * (1 - clamped) / (target_width ** 2))
+        return max(0, required - self.total)
+
+    def __str__(self) -> str:
+        if self.value is None:
+            return "     —"
+        if self.low is None:
+            return f"{100 * self.value:5.1f}%"
+        return f"{100 * self.value:5.1f}%  [{100 * self.low:.0f}–{100 * self.high:.0f}]  n={self.total}"
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,15 +140,39 @@ class Metrics:
         return Counter(j.outcome for j in rows)
 
     # -- headline figures ------------------------------------------------
-    def precision(self, stratum: str | None = None) -> float | None:
+    def ratio(self, metric: str, stratum: str | None = None) -> tuple[int, int]:
+        """(successes, total) for a metric. The single source of truth for both
+        the point estimate and its interval, so the two cannot drift apart."""
         c = self.counts(stratum)
         answered = c["correct_match"] + c["wrong_match"]
-        return c["correct_match"] / answered if answered else None
+        if metric == "precision":
+            return c["correct_match"], answered
+        if metric == "recall":
+            return c["correct_match"], answered + c["missed"]
+        if metric == "coverage":
+            return answered, sum(c.values())
+        if metric == "abstention_precision":
+            return c["correct_abstention"], c["missed"] + c["correct_abstention"]
+        if metric == "hard_negative_precision":
+            hard = [j for j in self.scored
+                    if j.stratum in {"declared_distinct_neighbour", "abstain_thin_margin"}]
+            right = sum(1 for j in hard
+                        if j.outcome in {"correct_match", "correct_abstention"})
+            return right, len(hard)
+        raise ValueError(f"unknown metric {metric!r}")
+
+    def estimate(self, metric: str, stratum: str | None = None) -> Estimate:
+        """A rate plus its 95% Wilson interval."""
+        successes, total = self.ratio(metric, stratum)
+        bounds = wilson(successes, total)
+        low, high = bounds if bounds else (None, None)
+        return Estimate(successes, total, low, high)
+
+    def precision(self, stratum: str | None = None) -> float | None:
+        return self.estimate("precision", stratum).value
 
     def recall(self, stratum: str | None = None) -> float | None:
-        c = self.counts(stratum)
-        answerable = c["correct_match"] + c["wrong_match"] + c["missed"]
-        return c["correct_match"] / answerable if answerable else None
+        return self.estimate("recall", stratum).value
 
     def f1(self, stratum: str | None = None) -> float | None:
         p, r = self.precision(stratum), self.recall(stratum)
@@ -82,16 +181,11 @@ class Metrics:
         return 2 * p * r / (p + r)
 
     def coverage(self, stratum: str | None = None) -> float | None:
-        c = self.counts(stratum)
-        total = sum(c.values())
-        answered = c["correct_match"] + c["wrong_match"]
-        return answered / total if total else None
+        return self.estimate("coverage", stratum).value
 
     def abstention_precision(self, stratum: str | None = None) -> float | None:
         """Of the times it refused, how often was refusing right?"""
-        c = self.counts(stratum)
-        abstained = c["missed"] + c["correct_abstention"]
-        return c["correct_abstention"] / abstained if abstained else None
+        return self.estimate("abstention_precision", stratum).value
 
     # -- the number that matters -----------------------------------------
     def hard_negative_precision(self) -> float | None:
@@ -101,12 +195,7 @@ class Metrics:
         fails" is a substantially stronger claim than any single accuracy
         figure, and this is that second number.
         """
-        hard = [j for j in self.scored
-                if j.stratum in {"declared_distinct_neighbour", "abstain_thin_margin"}]
-        if not hard:
-            return None
-        right = sum(1 for j in hard if j.outcome in {"correct_match", "correct_abstention"})
-        return right / len(hard)
+        return self.estimate("hard_negative_precision").value
 
     # -- reweighting -----------------------------------------------------
     def corpus_estimate(self, metric: str = "precision") -> float | None:
