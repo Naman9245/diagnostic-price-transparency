@@ -6,6 +6,7 @@
     ratecard check A B           why two canonical tests may not be matched
     ratecard hard-negatives      seed pairs for the Phase 03 evaluation set
     ratecard coverage CORPUS.csv measure the taxonomy against a Phase 00 dump
+    ratecard sources             the Stage 1 source registry
     ratecard match CORPUS.csv    run the Stage 4 matcher over a corpus
 
 Phase 03, in this order and no other:
@@ -26,6 +27,8 @@ from ratecard.evaluate.metrics import evaluate as run_evaluate
 from ratecard.evaluate.sampling import STRATA, build_sample, write_sample
 from ratecard.names import normalise
 from ratecard.normalise import explain
+from ratecard.registry import RegistryError
+from ratecard.registry import load as load_registry
 from ratecard.taxonomy import ValidationError, load
 from ratecard.taxonomy.coverage import analyse, hard_negative_pairs
 from ratecard.taxonomy.loader import collect_warnings
@@ -180,6 +183,37 @@ def cmd_coverage(args: argparse.Namespace) -> int:
     print(f"\n  exit criterion (>= {COVERAGE_TARGET:.0f}% of rows): "
           f"{'PASS' if passed else 'NOT MET'} on exact coverage")
     return EXIT_OK if passed else EXIT_BELOW_TARGET
+
+
+def cmd_sources(_: argparse.Namespace) -> int:
+    try:
+        registry = load_registry()
+    except RegistryError as exc:
+        print("Source registry is invalid.\n", file=sys.stderr)
+        for problem in exc.problems:
+            print(f"  ✗ {problem}", file=sys.stderr)
+        return EXIT_INVALID
+
+    print(f"{len(registry)} sources\n")
+    for source in registry:
+        flag = "displayable" if source.display_ok else "names only"
+        where = f"{source.city}" if source.city else "—"
+        print(f"  {source.id}")
+        print(f"    {source.publisher}  ·  {where}  ·  {source.format}  ·  {flag}")
+        if source.carries_prices:
+            print(f"    {len(source.tiers)} tiers, comparing on "
+                  f"{source.comparison_tier!r} (column {source.comparison_index + 1})")
+        if source.as_of:
+            print(f"    as of {source.as_of}, retrieved {source.retrieved}")
+        print()
+
+    displayable = registry.displayable()
+    print(f"  {len(displayable)} source(s) may have prices shown publicly: "
+          f"{', '.join(s.id for s in displayable) or 'none'}")
+    if len(displayable) < 2:
+        print("\n  ! A price comparison needs more than one provider. Extending")
+        print("  ! this registry is the substance of Phase 04, not the plumbing.")
+    return EXIT_OK
 
 
 def cmd_match(args: argparse.Namespace) -> int:
@@ -389,6 +423,8 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("stats", help="taxonomy shape").set_defaults(fn=cmd_stats)
     sub.add_parser("hard-negatives", help="seed pairs for evaluation").set_defaults(
         fn=cmd_hard_negatives)
+    sub.add_parser("sources", help="the Stage 1 source registry").set_defaults(
+        fn=cmd_sources)
 
     lookup = sub.add_parser("lookup", help="resolve raw names")
     lookup.add_argument("names", nargs="+")

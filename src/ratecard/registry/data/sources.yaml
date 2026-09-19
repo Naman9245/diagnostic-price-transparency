@@ -1,0 +1,95 @@
+# Stage 1 source registry. Every price row the pipeline produces traces back to
+# an entry here.
+#
+# robots.txt was checked for all three publishers on 2026-09-04 and re-confirmed
+# 2026-09-19. Narayana and Lal PathLabs both Allow: / ; Redcliffe disallows only
+# campaign and landing paths. Nothing listed here is disallowed, and only
+# sitemaps and already-public documents are fetched - no per-test page is
+# crawled, because both lab chains put the test name in the URL slug.
+
+- id: narayana_mazumdar_shaw_bengaluru
+  publisher: Narayana Health
+  unit: Mazumdar Shaw Medical Center, Narayana Health City
+  city: Bengaluru
+  url: https://stgaccinwbsdevlrs01.blob.core.windows.net/newcorporatewbsite/sharing-medias/April2024/WLrg66wGMrZnL7pNaoJd.pdf
+  format: pdf
+  parser: narayana_pdf
+  sha256: "bccb6b94316ff882ad45e55cd30d064972970eda14411c58e801860ddc9ae3e0"
+  as_of: 2024-01-01
+  retrieved: 2026-09-04
+  refresh: yearly
+  display_ok: true
+  licence_note: >
+    Schedule of charges published by the hospital and linked from
+    narayanahealth.org. robots.txt allows all; the document is served from the
+    publisher's own CDN. A published tariff is intended to be read.
+  tiers: [OPD, General (C), Semi Private, SEMI DELUXE, Private,
+          PLATINUM-B, PLATINUM-A, PLATINUM SUITE, CCA, HDU, SDU]
+  comparison_tier: OPD
+  notes: >
+    120 pages, digital text layer, 5,898 priced rows. Eleven price columns -
+    a different schema from the same publisher's Guwahati unit, which is why
+    tiers live per-source rather than in a shared enum.
+
+- id: narayana_guwahati
+  publisher: Narayana Health
+  unit: Narayana Superspeciality Hospital
+  city: Guwahati
+  url: https://stgaccinwbsdevlrs01.blob.core.windows.net/newcorporatewbsite/sharing-medias/April2024/mNHw7DOWjOHaNP8WgQ8m.pdf
+  format: pdf
+  parser: narayana_pdf
+  sha256: "703df84780df00abd7161e5608a14809851db5b8cb2e15f666aa77f824cd61f8"
+  as_of: 2024-01-01
+  retrieved: 2026-09-04
+  refresh: yearly
+  display_ok: false
+  licence_note: >
+    Same publisher and posture as the Bengaluru unit.
+  tiers: [OPD, General C, General, Semi Private, Private, Deluxe, CCA, NICU]
+  comparison_tier: OPD
+  notes: >
+    NOT a Bengaluru price. Harvested for test names only, which is what
+    display_ok=false enforces - the census reported these figures as Bengaluru
+    ones and that is the mistake this field exists to prevent. Eight columns.
+
+- id: lalpathlabs_pathology_sitemap
+  publisher: Dr Lal PathLabs
+  url: https://www.lalpathlabs.com/sitemap-pathology-test.xml
+  format: sitemap
+  parser: sitemap_slug
+  retrieved: 2026-09-04
+  refresh: monthly
+  display_ok: false
+  licence_note: >
+    Sitemap is published for crawlers by definition. robots.txt Allow: / ; the
+    disallowed /pathology-tests/ path is a different one from the
+    /pathology-test/ URLs listed here. Only the sitemap is fetched - the test
+    name is the URL slug, so no per-test page is requested.
+  notes: Names only, no prices harvested. 2,396 URLs.
+
+- id: lalpathlabs_radiology_sitemap
+  publisher: Dr Lal PathLabs
+  url: https://www.lalpathlabs.com/sitemap-radiology-test.xml
+  format: sitemap
+  parser: sitemap_slug
+  retrieved: 2026-09-04
+  refresh: monthly
+  display_ok: false
+  licence_note: Same posture as the pathology sitemap.
+  notes: Names only. 709 URLs.
+
+- id: redcliffe_sitemaps
+  publisher: Redcliffe Labs
+  url: https://redcliffelabs.com/sitemap.xml
+  format: sitemap
+  parser: sitemap_slug
+  retrieved: 2026-09-04
+  refresh: monthly
+  display_ok: false
+  licence_note: >
+    robots.txt disallows only /lp/, /campaign/ and similar landing paths, none
+    of which are fetched. Sitemap index plus nine child sitemaps.
+  notes: >
+    Names only. The bare /{city} landing pages are filtered out - a slug that
+    also appears as a city segment in a /{city}/tests/ URL is a city, not a
+    test. 139 were being harvested as test names before that filter.

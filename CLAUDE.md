@@ -17,7 +17,8 @@ BLOOD CELL COUNT` separate — is the whole problem.
 | 01 Taxonomy | done — 210 canonical tests, validating |
 | 02 Matcher | built, **untuned** — 20.7% of rows resolved, 205/210 tests observed |
 | 03 Label & evaluate | **blocked on human labelling** — 500 rows drawn, 0 labelled. See `docs/labelling-worked-examples.md` before starting |
-| 04–07 | not started (pipeline, geo/DB/API, UI, provenance) |
+| 04 Pipeline | **started** — Stage 1 registry done (`ratecard sources`); only **1 of 5 sources is displayable**, which is the real gap |
+| 05–07 | not started (geo/DB/API, UI, provenance) |
 
 Phase 03 is the deliverable. Everything after it is ordinary engineering.
 
@@ -55,6 +56,9 @@ and the default wheel drags in ~3GB of unused CUDA.
   is cheap; re-labelling 500 rows by hand is not. Check first.
 - **Only an exact alias hit skips review.** Everything else carries
   `needs_review`, however high it scored.
+- **A source with `display_ok: false` may never have a price shown.** Names
+  may be harvested. The registry refuses `display_ok: true` without a city,
+  because the census published Guwahati prices as Bengaluru ones.
 - **Never quote sample rates as corpus rates.** The evaluation sample is
   stratified; `corpus_estimate` reweights by the sizes in
   `data/eval/labels.csv.population.json`.
@@ -136,6 +140,7 @@ src/ratecard/
   normalise/         rules.py (veto) attributes.py (raw-string bridge)
                      matcher.py (4 layers) rerank.py (optional, lazy)
   evaluate/          sampling.py metrics.py labelling.py
+  registry/          Stage 1 — sources in data/sources.yaml, validated hard
 scripts/             phase00_seed_corpus.py — throwaway, replaced by Phase 04
 data/raw|interim|corpus/   gitignored, regenerable
 data/eval/                 COMMITTED — irreplaceable hand labels
