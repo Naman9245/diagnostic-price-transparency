@@ -41,8 +41,34 @@ conventional read-heavy API.
                 sha256       selectolax     MiniLM          Nominatim Next.js
 ```
 
-`src/ratecard/` mirrors those stages one directory each. Stage 4 and the
-taxonomy carry implementation today; stages 1-3 and 5-6 are seams.
+`src/ratecard/` mirrors those stages one directory each. Stages 1 and 4 and the
+taxonomy carry implementation today; 2, 3, 5 and 6 are seams.
+
+## Stage 1: the source registry
+
+```bash
+.venv/bin/ratecard sources
+```
+
+`src/ratecard/registry/data/sources.yaml`. Every price row traces back to an
+entry here, and the validation is governance rather than typing — each rule is
+a mistake the project already made once:
+
+- **`display_ok: true` requires a city.** The census published Guwahati prices
+  as Bengaluru ones. Guwahati is now permanently `display_ok: false`: its names
+  are harvested, its numbers can never reach a public view.
+- **A PDF must pin a sha256**, or the fetcher cannot tell a reissued document
+  from a cached one.
+- **A priced source must name its `comparison_tier`**, and it must be one of
+  that source's own columns. Tier vocabulary is per-document — the two Narayana
+  units use 11 columns and 8 — so this cannot be a shared enum.
+- **`licence_note` cannot be empty.** A schema cannot judge whether a source may
+  be used, but it can refuse to let the question go unanswered.
+
+It also states the product's actual problem in one line: **of five sources,
+exactly one may have its prices displayed.** A comparison with one provider is
+not a comparison. Extending this file is the substance of Phase 04; the
+plumbing around it is the easy half.
 
 ## Stage 4: the matcher
 
