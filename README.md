@@ -228,7 +228,7 @@ column header rather than normalise it away.
 
 ```bash
 .venv/bin/ratecard sample data/corpus/phase00.csv   # already drawn, 500 rows
-.venv/bin/ratecard label  data/eval/labels.csv --by you
+.venv/bin/ratecard label  data/eval/labels.csv --by you   # read the worked examples first
 .venv/bin/ratecard evaluate data/eval/labels.csv
 ```
 
@@ -256,6 +256,12 @@ and the naive pooled number is never reported as a corpus figure. Those sizes
 are written to `labels.csv.population.json` when the sample is drawn — without
 that sidecar no corpus estimate is possible, and `ratecard evaluate` says so
 rather than quoting a stratified rate as a corpus rate.
+
+**[docs/labelling-worked-examples.md](docs/labelling-worked-examples.md)** works
+fifteen real rows through end to end — the specimen rule, the view-count pair,
+when to press `u`, and the two cases where the matcher's abstention was wrong.
+All but one are drawn from outside the sample so reading it anchors nothing,
+and a test enforces that.
 
 ### Two things the labelling tool does deliberately
 

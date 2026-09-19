@@ -328,15 +328,35 @@ def slug_to_name(slug: str) -> str:
     return re.sub(r"\s+", " ", slug.replace("-", " ")).strip()
 
 
+def _city_segments() -> set[str]:
+    """Slugs that appear as a city in a /{city}/tests/ URL.
+
+    Redcliffe publishes a landing page per city at the bare path
+    /{city}, which the national-test pattern happily captures - so
+    "amravati", "bangalore" and 23 others were being harvested as though they
+    were test names, and one of them reached the evaluation sample. A slug that
+    serves as a city segment elsewhere in the same sitemaps is a city, not a
+    test; that is the site telling us, rather than a hand-written blocklist.
+    """
+    pattern = re.compile(r"redcliffelabs\.com/([a-z-]+)/tests/")
+    cities: set[str] = set()
+    for path in sorted((RAW / "sitemaps").glob("rc-*.xml")):
+        cities |= set(pattern.findall(path.read_text(encoding="utf-8", errors="replace")))
+    return cities
+
+
 def parse_sitemaps() -> list[dict]:
     rows: list[dict] = []
     seen: set[tuple[str, str]] = set()
+    cities = _city_segments()
 
     for source, glob, pattern in SITEMAPS:
         regex = re.compile(pattern, re.MULTILINE)
         for path in sorted((RAW / "sitemaps").glob(glob)):
             text = path.read_text(encoding="utf-8", errors="replace")
             for slug in regex.findall(text):
+                if slug in cities:
+                    continue  # city landing page, not a test
                 name = slug_to_name(slug)
                 if not name or len(name) < 2:
                     continue

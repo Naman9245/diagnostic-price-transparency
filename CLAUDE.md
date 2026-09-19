@@ -16,7 +16,7 @@ BLOOD CELL COUNT` separate — is the whole problem.
 | 00 Seed corpus | done — 13,112 rows, 11,648 distinct names, 4 source documents |
 | 01 Taxonomy | done — 210 canonical tests, validating |
 | 02 Matcher | built, **untuned** — 20.7% of rows resolved, 205/210 tests observed |
-| 03 Label & evaluate | **blocked on human labelling** — 500 rows drawn, 0 labelled |
+| 03 Label & evaluate | **blocked on human labelling** — 500 rows drawn, 0 labelled. See `docs/labelling-worked-examples.md` before starting |
 | 04–07 | not started (pipeline, geo/DB/API, UI, provenance) |
 
 Phase 03 is the deliverable. Everything after it is ordinary engineering.
@@ -119,6 +119,8 @@ Every one of these has a regression test in `tests/test_regressions.py`.
   fhir.loinc.org). 14 were wrong and are fixed, 2 nulled. Re-check with
   `python scripts/verify_loinc.py` — a clean run reports 0 and 0. Imaging
   deliberately carries none.
+- One dud row in the evaluation sample: `madurai`, a city landing page that
+  leaked in before the extraction filtered them. Label it `none`.
 - **31 Guwahati rows still fail to parse** (merged double-records). Reported in
   the script's output, not hidden.
 - Local folder is still `hopital_project` (typo). The GitHub remote is
