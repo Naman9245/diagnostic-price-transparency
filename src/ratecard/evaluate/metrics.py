@@ -148,7 +148,16 @@ class Metrics:
         if metric == "precision":
             return c["correct_match"], answered
         if metric == "recall":
-            return c["correct_match"], answered + c["missed"]
+            # Of the names that HAVE a real answer, how many were caught.
+            # wrong_match covers two different failures - overreach (truth is
+            # none, a test was guessed) and confusion (truth is Y, X was
+            # guessed) - and only confusion belongs in this denominator. The
+            # earlier `answered + missed` counted every overreach too, and on
+            # the train labels reported 36.3% recall against a true 86.9%.
+            rows = self.scored if stratum is None else [
+                j for j in self.scored if j.stratum == stratum
+            ]
+            return c["correct_match"], sum(1 for j in rows if j.label != NONE_LABEL)
         if metric == "coverage":
             return answered, sum(c.values())
         if metric == "abstention_precision":

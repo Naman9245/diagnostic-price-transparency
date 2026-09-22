@@ -209,3 +209,46 @@ def test_sampling_module_imports_without_rapidfuzz():
                             text=True, check=False,
                             cwd=Path(__file__).resolve().parent.parent)
     assert result.returncode == 0, result.stderr[-800:]
+
+
+# --- bug 8: recall counted overreach in its denominator --------------------
+
+def test_recall_denominator_is_only_names_with_a_real_answer(tmp_path):
+    """wrong_match holds both overreach (truth none) and confusion (truth Y).
+    Recall asks how many answerable names were caught, so overreach is not
+    part of the denominator. It was, and reported 36.3% against a true 86.9%."""
+    labels = tmp_path / "labels.csv"
+    rows = [
+        # one answerable name, caught
+        {"raw_name": "a", "label": "cbc", "matcher_guess": "cbc"},
+        # three overreach: truth is none, matcher guessed anyway
+        {"raw_name": "b", "label": "none", "matcher_guess": "tsh"},
+        {"raw_name": "c", "label": "none", "matcher_guess": "esr"},
+        {"raw_name": "d", "label": "none", "matcher_guess": "ldh"},
+        # one answerable name, missed
+        {"raw_name": "e", "label": "hba1c", "matcher_guess": ""},
+    ]
+    with labels.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=FIELDS)
+        writer.writeheader()
+        for r in rows:
+            writer.writerow({**dict.fromkeys(FIELDS, ""), **r,
+                             "stratum": "lexical", "split": "train",
+                             "matcher_confidence": "90"})
+    m = evaluate(labels, split="train")
+    assert m.recall() == pytest.approx(1 / 2), "2 answerable names, 1 caught"
+    assert m.precision() == pytest.approx(1 / 4), "4 answered, 1 right"
+
+
+def test_a_confusion_still_counts_against_recall(tmp_path):
+    """Overreach leaves the denominator; a genuine confusion does not."""
+    labels = tmp_path / "labels.csv"
+    with labels.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=FIELDS)
+        writer.writeheader()
+        for name, label, guess in [("a", "cbc", "cbc"), ("b", "troponin_t", "troponin_i")]:
+            writer.writerow({**dict.fromkeys(FIELDS, ""), "raw_name": name,
+                             "label": label, "matcher_guess": guess,
+                             "stratum": "lexical", "split": "train",
+                             "matcher_confidence": "90"})
+    assert evaluate(labels, split="train").recall() == pytest.approx(1 / 2)

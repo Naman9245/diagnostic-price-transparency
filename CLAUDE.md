@@ -16,7 +16,7 @@ BLOOD CELL COUNT` separate — is the whole problem.
 | 00 Seed corpus | superseded by Phase 04 — `ratecard ingest` now builds it |
 | 01 Taxonomy | done — 210 canonical tests, validating |
 | 02 Matcher | built, **untuned** — 20.7% of rows resolved, 205/210 tests observed |
-| 03 Label & evaluate | **train labelled (345/345, by Claude)**; holdout 0/155. Thresholds still untuned. See findings below |
+| 03 Label & evaluate | **train labelled (345/345, by Claude)**; holdout 0/155. Learned acceptor trained on train (`ratecard train`); unconfirmed on holdout |
 | 04 Pipeline | Stages 1-3 done — `ratecard ingest` builds 12,962 rows from 5 registry sources. Only **1 source is displayable**, which is the real gap |
 | 05–07 | not started (geo/DB/API, UI, provenance) |
 
@@ -29,6 +29,8 @@ Phase 03 is the deliverable. Everything after it is ordinary engineering.
 .venv/bin/ratecard match data/corpus/phase00.csv # run the matcher
 .venv/bin/ratecard label data/eval/labels.csv    # <- the blocking task
 .venv/bin/ratecard evaluate data/eval/labels.csv
+.venv/bin/ratecard train                         # fit the learned acceptor (train split only)
+.venv/bin/ratecard match data/corpus/phase00.csv --learned
 .venv/bin/ratecard ingest --fetch                # stages 1-3, rebuild the corpus
 .venv/bin/python -m pytest tests/ -q && .venv/bin/ruff check src tests scripts
 ```
@@ -64,6 +66,26 @@ audit of a random ~50 would give an agreement figure.
 
 So tuning is two separate knobs, not one threshold: stop overreach on names
 with substantial unmatched content, and loosen thin-margin slightly.
+
+**Learned acceptor (2026-09-23).** Rather than hand-tune those knobs, a logistic
+regression over 15 pair features replaces `ACCEPT_THRESHOLD` and `MARGIN`
+(`src/ratecard/learn/`). Out-of-fold on the 293 non-exact train names:
+
+| | precision | recall | overreach |
+|---|---|---|---|
+| rule-based | 11.5% [7-19] | 57.9% | 85 |
+| learned | 87.5% [64-97] | 73.7% | 2 |
+
+It beats the rule-based matcher on precision *and* recall. The two strongest
+reject signals are raw words the candidate does not cover and words absent
+from the whole taxonomy vocabulary - exactly the overreach cases. Opt-in via
+`match --learned`; the fixed thresholds remain the default until the holdout
+confirms it. Only 19 positive pairs, so treat the numbers as provisional.
+
+Recall was mis-reported as 36.3% until this date. `wrong_match` held both
+overreach and confusion and the denominator counted both; recall asks only
+about names that have a real answer. True train recall is 86.9%. A test had
+been asserting the buggy value.
 
 ## Rules that must not be broken
 
@@ -144,6 +166,9 @@ Every one of these has a regression test in `tests/test_regressions.py`.
   tests. Most fabrications were *one digit off* a real code (`38476-0` for
   `38476-8`), which is exactly the shape that survives a plausibility check.
   Never hand-write an external identifier; look it up.
+- **A test can guard a bug.** `test_precision_recall_and_coverage` asserted
+  recall = 1/3, which was the buggy value. Tests encode what someone believed
+  when they wrote them; when a definition is wrong, its test is wrong too.
 - **A docstring is not a guarantee.** Twice now a docstring has described
   behaviour the code did not have — `_apply_vetoes` claimed to use
   `distinct_from` and never did, and `fetch_raw` claimed never to overwrite in
@@ -174,11 +199,13 @@ src/ratecard/
   normalise/         rules.py (veto) attributes.py (raw-string bridge)
                      matcher.py (4 layers) rerank.py (optional, lazy)
   evaluate/          sampling.py metrics.py labelling.py
+  learn/             features.py dataset.py model.py - the learned acceptor
   registry/          Stage 1 — sources in data/sources.yaml, validated hard
   fetch/             Stage 2 — immutable raw store, hash-pinned
   parse/             Stage 3 — adapters dispatched by the registry's `parser`
   pipeline.py        stages 1-3 wired: registry -> fetch -> parse -> rows
 scripts/             verify_loinc.py — re-check codes against the NLM table
 data/raw|interim|corpus/   gitignored, regenerable
-data/eval/                 COMMITTED — irreplaceable hand labels
+data/eval/                 COMMITTED — irreplaceable labels
+data/models/acceptor.json  COMMITTED — trained model, plain JSON
 ```

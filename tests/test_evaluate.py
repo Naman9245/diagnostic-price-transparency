@@ -214,7 +214,10 @@ def test_split_filter(scored):
 def test_precision_recall_and_coverage(scored):
     m = evaluate(scored, split="train")
     assert m.precision() == pytest.approx(1 / 2)
-    assert m.recall() == pytest.approx(1 / 3)
+    # Two names have a real answer (a: cbc, c: esr) and one was caught. This
+    # asserted 1/3 until 2026-09-23, which enshrined a bug: row b is an
+    # overreach (truth none) and does not belong in recall's denominator.
+    assert m.recall() == pytest.approx(1 / 2)
     assert m.coverage() == pytest.approx(2 / 5)
     assert m.abstention_precision() == pytest.approx(2 / 3)
 
