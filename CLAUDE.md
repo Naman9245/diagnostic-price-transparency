@@ -16,7 +16,7 @@ BLOOD CELL COUNT` separate — is the whole problem.
 | 00 Seed corpus | superseded by Phase 04 — `ratecard ingest` now builds it |
 | 01 Taxonomy | done — 210 canonical tests, validating |
 | 02 Matcher | built, **untuned** — 20.7% of rows resolved, 205/210 tests observed |
-| 03 Label & evaluate | **blocked on human labelling** — 500 rows drawn, 0 labelled. See `docs/labelling-worked-examples.md` before starting |
+| 03 Label & evaluate | **train labelled (345/345, by Claude)**; holdout 0/155. Thresholds still untuned. See findings below |
 | 04 Pipeline | Stages 1-3 done — `ratecard ingest` builds 12,962 rows from 5 registry sources. Only **1 source is displayable**, which is the real gap |
 | 05–07 | not started (geo/DB/API, UI, provenance) |
 
@@ -44,6 +44,27 @@ and the default wheel drags in ~3GB of unused CUDA.
 
 `AGENTS.md` is a symlink to this file. Edit this one.
 
+## Phase 03 findings (train split, model-labelled)
+
+The 345 train rows were labelled by Claude at the user's request,
+`labelled_by=claude`, working from raw name + unranked candidates + taxonomy
+only - matcher guess, method, confidence and stratum were hidden. Model labels
+are weaker ground truth than human ones; any write-up must say so. A human
+audit of a random ~50 would give an agreement figure.
+
+- **Exact alias hits: 100% precision** (n=42). The aliases are right.
+- **Lexical commits: 11.5% precision** (n=96). Badly overconfident.
+- **Every one of the 85 wrong matches is overreach, zero are confusion.** The
+  matcher never picked the wrong canonical test when a right one existed. It
+  fails only by matching out-of-taxonomy names - "HIV 1 viral load" to the
+  antibody screen, "t3 reverse" to total T3, a progesterone-receptor
+  immunostain to serum progesterone.
+- **Hard-negative accuracy 91.4% [84-96]**, n=93. The veto machinery works.
+- **All 8 misses are thin-margin abstentions** with the answer in the top two.
+
+So tuning is two separate knobs, not one threshold: stop overreach on names
+with substantial unmatched content, and loosen thin-margin slightly.
+
 ## Rules that must not be broken
 
 - **Do not tune any threshold in `normalise/matcher.py` before Phase 03 labels
@@ -51,7 +72,9 @@ and the default wheel drags in ~3GB of unused CUDA.
   first makes the evaluation meaningless. This is the single most important
   constraint in the project.
 - **Do not read the `holdout` split** until every threshold is frozen. It is
-  meant to be looked at once. `ratecard evaluate` defaults to `train`.
+  meant to be looked at once. `ratecard evaluate` defaults to `train`. The
+  train split is now labelled; the holdout is not, and whoever labels it
+  should ideally not be whoever tunes the thresholds.
 - **Do not re-draw the evaluation sample if any row is labelled.** Regenerating
   is cheap; re-labelling 500 rows by hand is not. Check first.
 - **Only an exact alias hit skips review.** Everything else carries
