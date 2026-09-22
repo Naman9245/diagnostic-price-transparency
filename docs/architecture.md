@@ -154,7 +154,7 @@ src/ratecard/
     labelling.py      interactive labeller, autosaving
     metrics.py        five outcomes, per-stratum, reweighted
 scripts/
-  phase00_seed_corpus.py   deliberately throwaway; Phase 04 replaces it
+  verify_loinc.py          re-check LOINC codes against the NLM table
 data/
   raw/ interim/ corpus/    gitignored, regenerable from the registry
   eval/                    COMMITTED — hand labels are irreplaceable

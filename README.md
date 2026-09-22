@@ -212,7 +212,7 @@ machine. Heavier stages are optional extras in `pyproject.toml`.
 
 ## Phase 00, rebuilt
 
-`scripts/phase00_seed_corpus.py --fetch` rebuilds the corpus from scratch:
+`ratecard ingest --fetch` rebuilds the corpus from scratch:
 downloads the sources, verifies their sha256, extracts the PDF text, writes
 `data/corpus/phase00.csv`.
 
