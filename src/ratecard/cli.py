@@ -7,6 +7,7 @@
     ratecard hard-negatives      seed pairs for the Phase 03 evaluation set
     ratecard coverage CORPUS.csv measure the taxonomy against a Phase 00 dump
     ratecard sources             the Stage 1 source registry
+    ratecard ingest              stages 1-3: registry -> fetch -> parse -> CSV
     ratecard match CORPUS.csv    run the Stage 4 matcher over a corpus
 
 Phase 03, in this order and no other:
@@ -213,6 +214,65 @@ def cmd_sources(_: argparse.Namespace) -> int:
     if len(displayable) < 2:
         print("\n  ! A price comparison needs more than one provider. Extending")
         print("  ! this registry is the substance of Phase 04, not the plumbing.")
+    return EXIT_OK
+
+
+def cmd_ingest(args: argparse.Namespace) -> int:
+    """Stages 1-3. Replaces scripts/phase00_seed_corpus.py."""
+    import csv as csv_module
+
+    from ratecard.fetch import RawStore, SourceChanged, fetch_all
+    from ratecard.parse.rows import FIELDS as ROW_FIELDS
+    from ratecard.pipeline import ingest_all
+
+    try:
+        registry = load_registry()
+    except RegistryError as exc:
+        print("Source registry is invalid.\n", file=sys.stderr)
+        for problem in exc.problems:
+            print(f"  ✗ {problem}", file=sys.stderr)
+        return EXIT_INVALID
+
+    store = RawStore(Path(args.raw))
+    interim = Path(args.interim)
+
+    if args.fetch:
+        try:
+            for result in fetch_all(registry, store, force=args.force):
+                state = "cached" if result.from_cache else "GET   "
+                print(f"  {state}  {result.source_id:36} {result.sha256[:16]}...")
+        except SourceChanged as exc:
+            print(f"\nSTOPPED: {exc}", file=sys.stderr)
+            return EXIT_INVALID
+        print()
+
+    rows = []
+    for result in ingest_all(registry, store, interim):
+        bits = []
+        if result.unparsed:
+            bits.append(f"{result.unparsed} unparsed")
+        if result.skipped:
+            bits.append(f"{result.skipped:,} skipped")
+        if result.documents > 1:
+            bits.append(f"{result.documents} docs")
+        note = f"   {', '.join(bits)}" if bits else ""
+        print(f"  {result.source_id:36} {len(result.rows):>6} rows{note}")
+        rows.extend(result.rows)
+
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with out.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv_module.DictWriter(handle, fieldnames=ROW_FIELDS)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row.as_dict())
+
+    distinct = len({r.raw_name.lower() for r in rows})
+    priced = sum(1 for r in rows if r.price)
+    shown = sum(1 for r in rows if r.display_ok and r.price)
+    print(f"\n  wrote {out}")
+    print(f"  {len(rows)} rows, {distinct} distinct names, {priced} priced, "
+          f"{shown} of those displayable")
     return EXIT_OK
 
 
@@ -425,6 +485,14 @@ def main(argv: list[str] | None = None) -> int:
         fn=cmd_hard_negatives)
     sub.add_parser("sources", help="the Stage 1 source registry").set_defaults(
         fn=cmd_sources)
+
+    ingest = sub.add_parser("ingest", help="stages 1-3: registry -> fetch -> parse")
+    ingest.add_argument("--out", default="data/corpus/phase00.csv")
+    ingest.add_argument("--raw", default="data/raw")
+    ingest.add_argument("--interim", default="data/interim")
+    ingest.add_argument("--fetch", action="store_true", help="download first")
+    ingest.add_argument("--force", action="store_true", help="re-download even if cached")
+    ingest.set_defaults(fn=cmd_ingest)
 
     lookup = sub.add_parser("lookup", help="resolve raw names")
     lookup.add_argument("names", nargs="+")

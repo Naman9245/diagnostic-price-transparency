@@ -13,11 +13,11 @@ BLOOD CELL COUNT` separate — is the whole problem.
 
 | Phase | State |
 |---|---|
-| 00 Seed corpus | done — 13,112 rows, 11,648 distinct names, 4 source documents |
+| 00 Seed corpus | superseded by Phase 04 — `ratecard ingest` now builds it |
 | 01 Taxonomy | done — 210 canonical tests, validating |
 | 02 Matcher | built, **untuned** — 20.7% of rows resolved, 205/210 tests observed |
 | 03 Label & evaluate | **blocked on human labelling** — 500 rows drawn, 0 labelled. See `docs/labelling-worked-examples.md` before starting |
-| 04 Pipeline | **started** — Stage 1 registry done (`ratecard sources`); only **1 of 5 sources is displayable**, which is the real gap |
+| 04 Pipeline | Stages 1-3 done — `ratecard ingest` builds 12,962 rows from 5 registry sources. Only **1 source is displayable**, which is the real gap |
 | 05–07 | not started (geo/DB/API, UI, provenance) |
 
 Phase 03 is the deliverable. Everything after it is ordinary engineering.
@@ -29,7 +29,7 @@ Phase 03 is the deliverable. Everything after it is ordinary engineering.
 .venv/bin/ratecard match data/corpus/phase00.csv # run the matcher
 .venv/bin/ratecard label data/eval/labels.csv    # <- the blocking task
 .venv/bin/ratecard evaluate data/eval/labels.csv
-python scripts/phase00_seed_corpus.py --fetch    # rebuild the corpus
+.venv/bin/ratecard ingest --fetch                # stages 1-3, rebuild the corpus
 .venv/bin/python -m pytest tests/ -q && .venv/bin/ruff check src tests scripts
 ```
 
@@ -56,6 +56,9 @@ and the default wheel drags in ~3GB of unused CUDA.
   is cheap; re-labelling 500 rows by hand is not. Check first.
 - **Only an exact alias hit skips review.** Everything else carries
   `needs_review`, however high it scored.
+- **Adding a source of a known format is a YAML entry, not a code change.**
+  Adapters are dispatched by the registry's `parser` field. If you find
+  yourself editing `parse/` to add a source, check the format is really new.
 - **A source with `display_ok: false` may never have a price shown.** Names
   may be harvested. The registry refuses `display_ok: true` without a city,
   because the census published Guwahati prices as Bengaluru ones.
@@ -94,6 +97,14 @@ Every one of these has a regression test in `tests/test_regressions.py`.
 - **`distinct_from` is resolved by evidence**, not by a wider margin — a word in
   the raw name belonging to one of the pair and not the other. Widening the
   margin instead wrongly abstains on `BLOOD UREA NITROGEN (BUN)`.
+- **A sitemap index is not always a `<sitemapindex>`.** Redcliffe publishes
+  its index as a `<urlset>` with child sitemaps listed among ordinary nav URLs.
+  Detecting on the wrapper element harvested 24 names instead of 2,215; detect
+  on `<loc>` values ending `.xml` instead, and drop the index once children are
+  found or its nav pages become test names.
+- **Sitemap URLs carry query strings and percent-encoding.**
+  `pathology-test/hba1c?q=hba1c` and `urine%20routine`. Strip the query and
+  unquote before taking the slug — the throwaway baked both into the name.
 - **PDF rows wrap.** Long names push the price run onto the next line; the
   parser rejoins them. It also reports what it still cannot parse rather than
   dropping it silently — that bug cost 16% of one source.
@@ -141,7 +152,10 @@ src/ratecard/
                      matcher.py (4 layers) rerank.py (optional, lazy)
   evaluate/          sampling.py metrics.py labelling.py
   registry/          Stage 1 — sources in data/sources.yaml, validated hard
-scripts/             phase00_seed_corpus.py — throwaway, replaced by Phase 04
+  fetch/             Stage 2 — immutable raw store, hash-pinned
+  parse/             Stage 3 — adapters dispatched by the registry's `parser`
+  pipeline.py        stages 1-3 wired: registry -> fetch -> parse -> rows
+scripts/             verify_loinc.py — re-check codes against the NLM table
 data/raw|interim|corpus/   gitignored, regenerable
 data/eval/                 COMMITTED — irreplaceable hand labels
 ```
