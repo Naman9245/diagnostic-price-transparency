@@ -166,6 +166,11 @@ class Matcher:
     candidate_floor: float = CANDIDATE_FLOOR
     distinct_multiplier: float = DISTINCT_MARGIN_MULTIPLIER
     reranker: object | None = field(default=None, repr=False)
+    # Optional learned accept/abstain decision (ratecard.learn). When set it
+    # replaces ACCEPT_THRESHOLD and MARGIN - the hand-set placeholders the
+    # Phase 03 labels showed were badly miscalibrated, accepting 85 names with
+    # no right answer. The exact layer and the veto are unaffected.
+    acceptor: object | None = field(default=None, repr=False)
 
     @cached_property
     def _surfaces(self) -> tuple[list[str], list[str]]:
@@ -294,6 +299,9 @@ class Matcher:
                          f"every candidate blocked; best was {found[0].test_id} "
                          f"({found[0].veto})", tuple(found))
 
+        if self.acceptor is not None:
+            return self._learned_decision(raw_name, survivors, tuple(found))
+
         top = survivors[0]
         if top.score < self.accept_threshold:
             return Match(raw_name, None, top.score, "abstain_low_score",
@@ -332,6 +340,28 @@ class Matcher:
 
         method = "lexical" if top.rerank is None else "embedding"
         return Match(raw_name, top.test_id, top.score, method, None, tuple(found))
+
+    @cached_property
+    def _featuriser(self):
+        from ratecard.learn.features import Featuriser
+
+        return Featuriser(self.taxonomy)
+
+    def _learned_decision(self, raw_name: str, survivors: list, found: tuple) -> Match:
+        """Score every survivor and accept the best only if it clears the
+        model's threshold. Every candidate is scored, not just the leader, so
+        the model can pick the right one of a close pair - which is how it
+        recovers thin-margin misses the fixed MARGIN rule abstained on."""
+        scored = [
+            (self.acceptor.probability(self._featuriser.pair(raw_name, c, survivors)), c)
+            for c in survivors
+        ]
+        probability, best = max(scored, key=lambda pc: pc[0])
+        if probability >= self.acceptor.threshold:
+            return Match(raw_name, best.test_id, 100.0 * probability, "learned", None, found)
+        return Match(raw_name, None, 100.0 * probability, "abstain_learned",
+                     f"best candidate {best.test_id} at p={probability:.2f} "
+                     f"< {self.acceptor.threshold:.2f}", found)
 
     def match_many(self, raw_names) -> list[Match]:
         return [self.match(name) for name in raw_names]

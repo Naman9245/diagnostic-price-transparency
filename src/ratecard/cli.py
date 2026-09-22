@@ -14,6 +14,7 @@ Phase 03, in this order and no other:
     ratecard sample CORPUS.csv   draw the stratified labelling set
     ratecard label LABELS.csv    label it by hand, before tuning anything
     ratecard evaluate LABELS.csv score the matcher against those labels
+    ratecard train               fit the learned acceptor on the train labels
 """
 
 from __future__ import annotations
@@ -186,6 +187,72 @@ def cmd_coverage(args: argparse.Namespace) -> int:
     return EXIT_OK if passed else EXIT_BELOW_TARGET
 
 
+def cmd_train(args: argparse.Namespace) -> int:
+    """Fit the learned accept/abstain model on the train labels only."""
+    taxonomy = _load_or_die()
+    _require_matcher()
+    try:
+        from ratecard.learn.dataset import build
+        from ratecard.learn.model import (
+            choose_threshold,
+            cross_validate,
+            rates,
+            score,
+            train,
+        )
+    except ImportError as exc:
+        print(f"Training needs scikit-learn: {exc}\n  pip install -e '.[learn]'",
+              file=sys.stderr)
+        return EXIT_INVALID
+
+    from ratecard.evaluate.metrics import wilson
+
+    labels = Path(args.labels)
+    pairs = build(taxonomy, labels, split="train")
+    positives = sum(pairs.y)
+    if positives < 5:
+        print(f"Only {positives} positive pairs in the train labels - not enough "
+              f"to fit anything meaningful. Label more of the train split first.",
+              file=sys.stderr)
+        return EXIT_INVALID
+
+    print(f"train split: {len(pairs.truth)} non-exact labelled names, "
+          f"{len(pairs.y)} pairs, {positives} positive\n")
+
+    oof = cross_validate(pairs, folds=args.folds)
+    threshold, counts = choose_threshold(pairs, oof, args.target)
+
+    def line(label, c):
+        r = rates(c)
+        lo, hi = wilson(c["correct_match"], r["answered"]) if r["answered"] else (0, 0)
+        print(f"  {label:30} precision {100 * r['precision']:5.1f}% "
+              f"[{100 * lo:.0f}-{100 * hi:.0f}]  recall {100 * r['recall']:5.1f}%  "
+              f"overreach {c['overreach']:>3}  missed {c['missed']:>2}")
+
+    print(f"  out-of-fold, {args.folds}-fold grouped by name:")
+    line("rule-based matcher", score(pairs.baseline, pairs.truth))
+    line(f"learned (target {args.target:.0%})", counts)
+
+    r, b = rates(counts), rates(score(pairs.baseline, pairs.truth))
+    acceptor = train(pairs, threshold, metadata={
+        "labels": f"{labels} (train split)",
+        "target_precision": args.target, "cv_folds": args.folds,
+        "cv_precision": round(r["precision"], 4), "cv_recall": round(r["recall"], 4),
+        "cv_overreach": counts["overreach"],
+        "baseline_precision": round(b["precision"], 4),
+        "baseline_recall": round(b["recall"], 4),
+    })
+    out = Path(args.out)
+    acceptor.save(out)
+    print(f"\n  threshold {threshold:.3f}, saved {out}")
+    print("\n  strongest effects (standardised coefficients):")
+    for name, weight in acceptor.explain()[:6]:
+        print(f"    {name:18} {weight:+6.2f}  {'accept' if weight > 0 else 'reject'}")
+    print(f"\n  ! {positives} positive pairs is a small training set. These are "
+          f"cross-validated\n  ! estimates on train; the holdout is where they get confirmed.")
+    return EXIT_OK
+
+
 def cmd_sources(_: argparse.Namespace) -> int:
     try:
         registry = load_registry()
@@ -294,6 +361,15 @@ def cmd_match(args: argparse.Namespace) -> int:
             print("  ! sentence-transformers not installed; running lexical only\n",
                   file=sys.stderr)
     matcher = _matcher_or_die(taxonomy, reranker)
+    if args.learned:
+        from ratecard.learn.model import Acceptor
+
+        model_path = Path(args.model)
+        if not model_path.exists():
+            print(f"No trained model at {model_path}. Run `ratecard train` first.",
+                  file=sys.stderr)
+            return EXIT_INVALID
+        matcher.acceptor = Acceptor.load(model_path)
     with corpus.open(newline="", encoding="utf-8") as handle:
         names = [r["raw_name"].strip() for r in csv.DictReader(handle) if r.get("raw_name")]
 
@@ -514,6 +590,9 @@ def main(argv: list[str] | None = None) -> int:
     match_cmd.add_argument("--show", type=int, default=0, help="sample N abstentions")
     match_cmd.add_argument("--rerank", action="store_true",
                            help="enable the embedding rerank (needs the rerank extra)")
+    match_cmd.add_argument("--learned", action="store_true",
+                           help="use the trained accept/abstain model instead of fixed thresholds")
+    match_cmd.add_argument("--model", default="data/models/acceptor.json")
     match_cmd.set_defaults(fn=cmd_match)
 
     sample = sub.add_parser("sample", help="draw the stratified labelling set")
@@ -533,6 +612,14 @@ def main(argv: list[str] | None = None) -> int:
     ev.add_argument("--split", choices=["train", "holdout", "all"], default="train")
     ev.add_argument("--worst", type=int, default=20)
     ev.set_defaults(fn=cmd_evaluate)
+
+    tr = sub.add_parser("train", help="fit the learned acceptor on the train labels")
+    tr.add_argument("labels", nargs="?", default="data/eval/labels.csv")
+    tr.add_argument("--out", default="data/models/acceptor.json")
+    tr.add_argument("--folds", type=int, default=5)
+    tr.add_argument("--target", type=float, default=0.80,
+                    help="precision the operating threshold must reach out-of-fold")
+    tr.set_defaults(fn=cmd_train)
 
     args = parser.parse_args(argv)
     return args.fn(args)
