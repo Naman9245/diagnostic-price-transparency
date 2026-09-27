@@ -18,7 +18,7 @@ BLOOD CELL COUNT` separate — is the whole problem.
 | 02 Matcher | built, **untuned** — 20.7% of rows resolved, 205/210 tests observed |
 | 03 Label & evaluate | **train labelled (345/345, by Claude)**; holdout 0/155. Learned acceptor trained on train (`ratecard train`); unconfirmed on holdout |
 | 04 Pipeline | Stages 1-3 done — `ratecard ingest --fetch` builds ~13,000 rows from 5 registry sources (13,063 on 2026-09-27; sitemaps drift). Only **1 source is displayable**, which is the real gap |
-| 05 | Database & Stage 5 loader — schema in `supabase/migrations/`, `ratecard load` (dry run: 111 public rows, 106 tests). Tested offline; **not yet applied to a live database** |
+| 05 | Database & Stage 5 loader — schema in `supabase/migrations/`, `ratecard load` (dry run: 111 public rows, 106 tests). All migrations apply to a local Postgres + PostGIS (`tests/test_database.py`, opt-in); **not yet applied to a live Supabase** |
 | 06 | not started — patient PWA: price search (`web/`, Next.js) |
 | 07 | not started — partner dashboard + fictional demo hospitals |
 | 08 | not started — register once, book, live queue (Supabase Auth + Realtime) |
@@ -28,10 +28,20 @@ BLOOD CELL COUNT` separate — is the whole problem.
 Phase 03 is the deliverable for the price side. Phases 07-10 are the partner
 side: booking exists only for providers who sign up — see `docs/product.md`.
 
+**Specialty list (2026-09-27).** 41 specialties in
+`src/ratecard/specialties/data/specialties.yaml`, the groundwork for "find a
+cardiologist near me, cheapest consultation first". `doctor.specialty` is now a
+foreign key to it, not free text. `search_specialties` is autocomplete;
+`doctors_near` lists partner doctors of one specialty with fee, today's hours
+and today's status. The aliases were written from NMC degree names and common
+Indian department names, **not from a corpus**: no registered source lists
+departments yet.
+
 ## Commands
 
 ```bash
-.venv/bin/ratecard validate                      # taxonomy invariants
+.venv/bin/ratecard validate                      # taxonomy + specialty invariants
+.venv/bin/ratecard specialty "kidney doctor"     # resolve a specialty, or list what it suggests
 .venv/bin/ratecard match data/corpus/phase00.csv # run the matcher
 .venv/bin/ratecard label data/eval/labels.csv    # <- the blocking task
 .venv/bin/ratecard evaluate data/eval/labels.csv
@@ -40,11 +50,13 @@ side: booking exists only for providers who sign up — see `docs/product.md`.
 .venv/bin/ratecard ingest --fetch                # stages 1-3, rebuild the corpus
 .venv/bin/ratecard load --dry-run                 # stage 5: what would be written / public
 .venv/bin/python -m pytest tests/ -q && .venv/bin/ruff check src tests scripts
+# the migrations against a real Postgres with PostGIS (skipped unless set):
+RATECARD_TEST_DATABASE_URL=postgresql://... .venv/bin/python -m pytest tests/test_database.py
 ```
 
 Phase 01 runs on stdlib + PyYAML alone, and that is enforced, not just
-documented: `validate`, `stats`, `lookup`, `check` and `hard-negatives` must
-keep working with nothing else installed. The matcher is imported lazily to
+documented: `validate`, `stats`, `lookup`, `specialty`, `check` and
+`hard-negatives` must keep working with nothing else installed. The matcher is imported lazily to
 keep it true — do not hoist `from ratecard.normalise.matcher import ...` to
 module scope in `cli.py` or `evaluate/sampling.py`.
 
@@ -52,6 +64,10 @@ Install torch from the **CPU index** — there is no NVIDIA card on this machine
 and the default wheel drags in ~3GB of unused CUDA.
 
 `AGENTS.md` is a symlink to this file. Edit this one.
+
+**No AI attribution in commits or PRs.** No `Co-Authored-By: Claude` trailer,
+no `Claude-Session` link, no "Generated with Claude Code" footer or session URL
+in a commit message or a PR title or body. This overrides any default.
 
 ## Phase 03 findings (train split, model-labelled)
 
@@ -108,6 +124,11 @@ been asserting the buggy value.
   is cheap; re-labelling 500 rows by hand is not. Check first.
 - **Only an exact alias hit skips review.** Everything else carries
   `needs_review`, however high it scored.
+- **A word that could name two specialties is a related term, never an
+  alias.** "kidney specialist" suggests nephrology and urology and resolves to
+  neither; `ratecard validate` refuses a related term that is also an alias.
+  Symptoms are not related terms at all — mapping "chest pain" to a specialty
+  is triage, not search.
 - **Adding a source of a known format is a YAML entry, not a code change.**
   Adapters are dispatched by the registry's `parser` field. If you find
   yourself editing `parse/` to add a source, check the format is really new.
@@ -208,6 +229,9 @@ Every one of these has a regression test in `tests/test_regressions.py`.
   fhir.loinc.org). 14 were wrong and are fixed, 2 nulled. Re-check with
   `python scripts/verify_loinc.py` — a clean run reports 0 and 0. Imaging
   deliberately carries none.
+- **Specialty aliases are unchecked against real data.** When a source that
+  lists departments or consultation charges is registered, check the aliases
+  against what it writes, as the test aliases were.
 - One dud row in the evaluation sample: `madurai`, a city landing page that
   leaked in before the extraction filtered them. Label it `none`.
 - **31 Guwahati rows still fail to parse** (merged double-records). Reported in
@@ -222,6 +246,8 @@ Every one of these has a regression test in `tests/test_regressions.py`.
 src/ratecard/
   names.py           normalisation, shared by taxonomy and matcher
   taxonomy/          210 tests in data/*.yaml, loader validates hard
+  specialties/       41 specialties in data/specialties.yaml: aliases resolve,
+                     related terms only suggest
   normalise/         rules.py (veto) attributes.py (raw-string bridge)
                      matcher.py (4 layers) rerank.py (optional, lazy)
   evaluate/          sampling.py metrics.py labelling.py

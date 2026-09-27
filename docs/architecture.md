@@ -186,6 +186,7 @@ and means nothing — which is worse than no comparison.
 src/ratecard/
   names.py            normalisation — shared by taxonomy and matcher so they cannot drift
   taxonomy/           210 canonical tests in data/*.yaml; loader validates hard
+  specialties/        41 medical specialties; aliases resolve, related terms only suggest
     schema.py         what a canonical test is, and which fields block a match
     loader.py         strict validation — alias collisions are a hard error
     coverage.py       measure the taxonomy against a corpus
@@ -214,7 +215,7 @@ the database enforces it. Seven more tables, in
 | table | holds |
 |---|---|
 | `provider_staff` | who may run a provider's dashboard |
-| `doctor`, `schedule_rule` | who sits when; weekly rules in IST, slot length, seats per slot |
+| `doctor`, `schedule_rule` | who sits when; weekly rules in IST, slot length, seats per slot. A doctor's specialty is a foreign key, never free text |
 | `doctor_day_status` | today's truth: arrived, delayed by N minutes, on leave; `queue_version` for Realtime |
 | `patient_profile` | filled once, reused at every partner |
 | `appointment` | slot, seat, token; one live appointment per seat by unique index |
@@ -225,6 +226,40 @@ A provider's `partner_status` (`none`, `demo`, `live`) decides everything:
 trigger on `appointment` refuses again. `demo` providers are fictional, and a
 trigger ties them to `demo_seed` sources in both directions, so demo prices can
 never sit on a real provider and a real document can never price a demo one.
+
+### Specialties
+
+A patient looking for a cardiologist has the same problem the price side has
+with test names: "Cardiology", "Cardiologist", "heart specialist" and
+"CARDIOLOGY OPD" are one thing, and "Cardiac Surgery" is another. So the fix
+is the same too. `src/ratecard/specialties/data/specialties.yaml` holds 41
+specialties, validated by `ratecard validate`, and `ratecard load` writes them
+into three tables in `supabase/migrations/20260927130000_specialties.sql`:
+
+| table | holds |
+|---|---|
+| `specialty` | id, name, what the doctor is called ("Cardiologist"), category |
+| `specialty_alias` | surface forms that resolve, each to exactly one specialty |
+| `specialty_term` | words that only point: "kidney" → nephrology *and* urology |
+
+The split between the last two is the design. An alias names one specialty. A
+related term, such as a body part, a condition or an umbrella word like
+"oncologist", may point at several and never resolves on its own. The
+validator refuses a word that is both, so a search can never quietly pick one
+reading of an ambiguous word. `search_specialties` returns each hit with `via`
+set to `alias` or `term`, so the app can tell "this is it" from "did you mean
+one of these".
+
+`doctors_near` is the query the partner side was missing: partner doctors of
+one specialty near a point, cheapest consultation first, with today's hours
+from the weekly schedule and today's status as staff set it. A status nobody
+has set today comes back null, meaning unknown, never "not arrived". Doctors at
+providers that have not signed up are never listed, by the same RLS policy
+that hides them everywhere else.
+
+Consultation charges at non-partner hospitals are not modelled yet. They will
+come from rate cards through the price pipeline, matched to this list the way
+test names are matched to the taxonomy.
 
 ## What is built
 

@@ -101,11 +101,13 @@ flowchart LR
 - **Everything upstream of the database is a replayable batch job.** Raw
   documents are immutable and hash-pinned, so "what did this rate card say in
   March?" always has an answer.
-- **No application server.** The two queries the app needs are SQL functions.
+- **No application server.** The queries the app needs are SQL functions.
   `search_tests` is autocomplete over exact aliases: it suggests, the user
   picks, nothing is guessed. `prices_near` is a PostGIS radius query, cheapest
-  first, with the source on every row. Booking, the queue and access rules
-  live in the same database.
+  first, with the source on every row. `search_specialties` and `doctors_near`
+  do the same for "a cardiologist near me": partner doctors of one specialty,
+  cheapest consultation first, with today's hours and status. Booking, the
+  queue and access rules live in the same database.
 - **The fuzzy matcher never runs at query time.** It runs once, in the batch
   job, where its output can be reviewed.
 
@@ -122,6 +124,7 @@ Full detail, the data model and every choice explained:
 | A provider that hasn't signed up can never be booked | `book_appointment`, and again by a trigger on `appointment` |
 | Demo data can never pass as real | a trigger ties `demo_seed` sources to demo providers, in both directions |
 | No double booking | unique index on (doctor, slot, seat), plus a per-doctor lock |
+| A doctor's specialty comes from the list, never free text | foreign key `doctor.specialty_id` |
 | A patient sees only their own records; a hospital sees only patients who booked there | row-level security |
 
 ## Status
@@ -132,7 +135,7 @@ Full detail, the data model and every choice explained:
 | 02 | Matcher | built; fixed thresholds are deliberately untuned |
 | 03 | Label and evaluate | train split labelled (345, model-labelled); **holdout 0/155**; learned acceptor trained, opt-in |
 | 04 | Pipeline, stages 1–3 | done: `ratecard ingest --fetch` builds ~13,000 rows from 5 sources, **1 of which may be displayed** |
-| 05 | Database and loader | schema and `ratecard load` written and tested offline; not yet applied to a live database |
+| 05 | Database and loader | schema and `ratecard load` written; migrations tested against a local Postgres + PostGIS; not yet applied to a live Supabase |
 | 06 | Patient PWA: price search | next |
 | 07 | Partner dashboard, fictional demo hospitals | planned |
 | 08 | Register once, book, live queue | planned |
@@ -161,14 +164,15 @@ pip install -e ".[dev,normalise,pipeline,serve]"
 ```bash
 ratecard validate                          # taxonomy invariants
 ratecard lookup "haemogram" "sugar F"      # exact resolution through the alias index
+ratecard specialty "kidney doctor"         # a specialty, or the ones a word points at
 ratecard check cbc rbc_count               # why two tests may never be matched
 ratecard ingest --fetch                    # download the registered sources, build the corpus
 ratecard match data/corpus/phase00.csv     # run the matcher over it
 ratecard load --dry-run                    # what the database would get, and what would be public
-python -m pytest tests/ -q                 # 258 tests
+python -m pytest tests/ -q                 # 323 tests, plus 10 that need a database
 ```
 
-`validate`, `stats`, `lookup`, `check` and `hard-negatives` run on the standard
+`validate`, `stats`, `lookup`, `specialty`, `check` and `hard-negatives` run on the standard
 library plus PyYAML alone, so the taxonomy can be checked on a bare machine.
 Heavier stages are optional extras in `pyproject.toml`, and a test enforces
 that they stay optional.
@@ -185,6 +189,7 @@ DATABASE_URL="postgresql://..." ratecard load
 src/ratecard/
   registry/ fetch/ parse/   stages 1–3: which documents, fetched immutably, parsed with provenance
   taxonomy/                 210 canonical tests in YAML, validated hard
+  specialties/              41 medical specialties: what patients search by, doctors are filed under
   normalise/                stage 4: the matcher and its veto rules
   learn/ evaluate/          learned acceptor; stratified sampling, labelling, metrics
   load/                     stage 5: records for Postgres, and which of them may be public
@@ -203,5 +208,5 @@ tests/                      including a regression test for every bug found in r
 | [docs/architecture.md](docs/architecture.md) | the pipeline, the database, the partner side, and why each choice |
 | [docs/matching.md](docs/matching.md) | how the matching works: four layers, the veto, the evaluation |
 | [docs/price-engine.md](docs/price-engine.md) | the engineering record: sources, numbers, rerank, review findings |
-| [docs/curating-the-taxonomy.md](docs/curating-the-taxonomy.md) | how to add a test or an alias |
+| [docs/curating-the-taxonomy.md](docs/curating-the-taxonomy.md) | how to add a test, a specialty or an alias |
 | [docs/labelling-worked-examples.md](docs/labelling-worked-examples.md) | fifteen real rows labelled end to end |

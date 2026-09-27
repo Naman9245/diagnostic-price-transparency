@@ -15,9 +15,13 @@ from ratecard.load.build import (
     load_providers,
     price_records,
     source_records,
+    specialty_alias_records,
+    specialty_records,
+    specialty_term_records,
 )
 
 __all__ = [
     "LoadError", "PriceBatch", "PriceRecord", "Provider", "alias_records",
     "canonical_test_records", "load_providers", "price_records", "source_records",
+    "specialty_alias_records", "specialty_records", "specialty_term_records",
 ]

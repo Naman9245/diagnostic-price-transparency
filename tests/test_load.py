@@ -14,8 +14,12 @@ from ratecard.load import (
     load_providers,
     price_records,
     source_records,
+    specialty_alias_records,
+    specialty_records,
+    specialty_term_records,
 )
 from ratecard.registry import load as load_registry
+from ratecard.specialties import load as load_specialties
 from ratecard.taxonomy import load as load_taxonomy
 
 BENGALURU = "narayana_mazumdar_shaw_bengaluru"
@@ -167,3 +171,13 @@ def test_building_records_never_imports_psycopg():
     result = subprocess.run([sys.executable, "-c", code], capture_output=True, check=False,
                             cwd=Path(__file__).resolve().parent.parent)
     assert result.returncode == 0
+
+
+def test_specialty_records_cover_the_whole_list():
+    specialties = load_specialties()
+    assert len(specialty_records(specialties)) == len(specialties)
+    assert dict(specialty_alias_records(specialties)) == specialties.alias_index
+    terms = specialty_term_records(specialties)
+    assert len(terms) == len(set(terms)) == sum(len(v) for v in specialties.term_index.values())
+    # "kidney" points at two specialties, so it is two rows.
+    assert {sid for term, sid in terms if term == "kidney"} == {"nephrology", "urology"}
