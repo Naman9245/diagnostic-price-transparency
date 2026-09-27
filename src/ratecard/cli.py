@@ -303,18 +303,35 @@ def cmd_ingest(args: argparse.Namespace) -> int:
     store = RawStore(Path(args.raw))
     interim = Path(args.interim)
 
+    # One client for both steps. A sitemap index's children are only known once
+    # the index is parsed, so they are fetched during ingest, not by fetch_all -
+    # and without a client ingest silently used the empty cache. On a fresh
+    # clone Redcliffe produced 0 rows instead of ~2,300.
+    client = None
     if args.fetch:
+        import httpx
+
+        from ratecard.fetch.store import UA
+
+        client = httpx.Client(headers={"User-Agent": UA}, follow_redirects=True,
+                              timeout=120)
         try:
-            for result in fetch_all(registry, store, force=args.force):
+            for result in fetch_all(registry, store, force=args.force, client=client):
                 state = "cached" if result.from_cache else "GET   "
                 print(f"  {state}  {result.source_id:36} {result.sha256[:16]}...")
         except SourceChanged as exc:
             print(f"\nSTOPPED: {exc}", file=sys.stderr)
+            client.close()
             return EXIT_INVALID
         print()
 
     rows = []
-    for result in ingest_all(registry, store, interim):
+    try:
+        ingested = list(ingest_all(registry, store, interim, client))
+    finally:
+        if client is not None:
+            client.close()
+    for result in ingested:
         bits = []
         if result.unparsed:
             bits.append(f"{result.unparsed} unparsed")
@@ -550,7 +567,21 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _utf8_streams() -> None:
+    """Print ✓ and ↔ on Windows too.
+
+    A piped or redirected stream on Windows defaults to cp1252, which cannot
+    encode them, so `ratecard validate | more` died on UnicodeEncodeError before
+    reporting anything. An interactive console is already UTF-8 and unaffected.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        encoding = (getattr(stream, "encoding", None) or "").lower().replace("-", "")
+        if encoding != "utf8" and hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 def main(argv: list[str] | None = None) -> int:
+    _utf8_streams()
     parser = argparse.ArgumentParser(prog="ratecard", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
