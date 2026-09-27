@@ -1,0 +1,479 @@
+# Medical specialties a patient can search by and a doctor is filed under.
+#
+# The same problem as the test taxonomy, one level up: "Paediatrician", "child
+# specialist" and "PAEDIATRICS OPD" are one specialty, while "Paediatric
+# Surgery" is another. Scope is the OPD a patient can walk into. Diagnostic
+# departments (pathology, radiology) are the test side of the product, and
+# emergency, anaesthesia and critical care are not searched for in advance.
+# AYUSH systems are out of scope for now, as are narrow subspecialties
+# (paediatric cardiology and the like), which get added when a real source
+# lists them.
+#
+# Names come from the NMC's MD / MS / DM / MCh / MDS subjects and from how
+# Indian hospitals name their departments, in Indian English spelling. Unlike
+# the test aliases, these were NOT drawn from a corpus: no source in the
+# registry lists departments yet. Check them against real department lists as
+# soon as one is registered, and add what those write.
+#
+# Two kinds of surface form, and the difference is the whole design:
+#
+#   aliases         name THIS specialty and nothing else. An exact hit resolves.
+#                   `ratecard validate` refuses any alias two specialties share.
+#   related_terms   what a patient types that points here without naming it:
+#                   a body part ("kidney"), a named condition ("cataract"), or an
+#                   umbrella word ("oncologist" names three specialties). They
+#                   only ever SUGGEST, may be shared, and may never equal an
+#                   alias. Symptoms are deliberately left out: turning
+#                   "chest pain" into a specialty is triage, not search.
+#
+# If a word could belong to two specialties, it is a related term, never an
+# alias. "kidney specialist" is a nephrologist to some people and a urologist to
+# others, so it suggests both and resolves to neither. That is the same rule the
+# test matcher follows: abstain rather than guess.
+#
+# `distinct_from` marks pairs that are easy to confuse and are never the same:
+# a cardiologist is not a cardiac surgeon. Tests check each pair stays apart.
+#
+# Spelling: names.normalise already folds paediatric, gynaecology and
+# haematology to US spelling, but not paediatrics, paediatrician, orthopaedics,
+# gynaecologist or haematologist, so both spellings of those are listed.
+# Department words (department, dept, OPD, clinic, consultation, consultant,
+# unit, services) are stripped before lookup and need no aliases of their own.
+
+# --------------------------------------------------------------- medical ----
+
+- id: general_medicine
+  name: General Medicine
+  practitioner: General Physician
+  category: medical
+  aliases: [general medicine, internal medicine, medicine, physician,
+            MD medicine, internist]
+  related_terms: [diabetes, hypertension, blood pressure, thyroid]
+  notes: >
+    "Department of Medicine" is how Indian hospitals name this, so bare
+    "medicine" resolves here. "General practitioner" and "GP" deliberately do
+    not: in India a GP is usually an MBBS doctor, not an MD in medicine.
+
+- id: family_medicine
+  name: Family Medicine
+  practitioner: Family Physician
+  category: medical
+  aliases: [family medicine, family physician, family doctor]
+
+- id: paediatrics
+  name: Paediatrics
+  practitioner: Paediatrician
+  category: medical
+  distinct_from: [paediatric_surgery]
+  aliases: [paediatrics, pediatrics, paediatrician, pediatrician,
+            paediatric medicine, child specialist, children specialist,
+            child doctor, children's doctor, child health]
+  related_terms: [child, children, baby, infant, vaccination]
+
+- id: neonatology
+  name: Neonatology
+  practitioner: Neonatologist
+  category: medical
+  aliases: [neonatology, neonatologist, newborn specialist]
+  related_terms: [newborn, baby, NICU, premature baby]
+
+- id: obstetrics_gynaecology
+  name: Obstetrics & Gynaecology
+  practitioner: Gynaecologist
+  category: medical
+  aliases: [obstetrics and gynaecology, obstetrics & gynaecology, OBG, OB/GYN,
+            OBGYN, obs and gynae, obs & gynae, obstetrics, gynaecology,
+            gynaecologist, gynecologist, obstetrician, gynae]
+  related_terms: [pregnancy, delivery, antenatal, menopause, PCOS]
+  notes: >
+    One specialty in India (MS/MD Obstetrics and Gynaecology), so obstetrics and
+    gynaecology alone both resolve here. Infertility and IVF are
+    reproductive_medicine.
+
+- id: dermatology
+  name: Dermatology
+  practitioner: Dermatologist
+  category: medical
+  aliases: [dermatology, dermatologist, DVL,
+            dermatology venereology and leprosy,
+            dermatology venereology & leprosy, venereology,
+            dermatology and cosmetology, dermatology & cosmetology,
+            skin specialist, skin doctor, skin and VD, skin & VD]
+  related_terms: [skin, hair, acne, nails, hair transplant]
+  notes: >
+    DVL is the Indian MD title. Bare "cosmetology" is not an alias: it also
+    names non-medical beauty courses.
+
+- id: psychiatry
+  name: Psychiatry
+  practitioner: Psychiatrist
+  category: medical
+  distinct_from: [clinical_psychology]
+  aliases: [psychiatry, psychiatrist, psychological medicine]
+  related_terms: [mental health, depression, anxiety, addiction]
+  notes: >
+    A psychiatrist is a doctor and prescribes; a clinical psychologist is not
+    and does not. Patients mix them up constantly, which is why "mental
+    health" suggests both and resolves to neither.
+
+- id: pulmonology
+  name: Pulmonology
+  practitioner: Pulmonologist
+  category: medical
+  aliases: [pulmonology, pulmonologist, respiratory medicine, pulmonary medicine,
+            chest physician, chest medicine, chest specialist, TB and chest,
+            TB & chest, TB and respiratory diseases,
+            tuberculosis and respiratory diseases]
+  related_terms: [lungs, lung, asthma, TB, tuberculosis, COPD, chest]
+  notes: The Indian MD is Respiratory Medicine, formerly TB and Chest.
+
+- id: cardiology
+  name: Cardiology
+  practitioner: Cardiologist
+  category: medical
+  distinct_from: [cardiothoracic_surgery]
+  aliases: [cardiology, cardiologist, heart specialist, heart doctor,
+            interventional cardiology, interventional cardiologist]
+  related_terms: [heart, hypertension, blood pressure]
+  notes: >
+    "Cardiac sciences" is not an alias: hospitals use it for a department
+    holding both cardiology and cardiac surgery.
+
+- id: neurology
+  name: Neurology
+  practitioner: Neurologist
+  category: medical
+  distinct_from: [neurosurgery]
+  aliases: [neurology, neurologist, neuro physician, neurophysician,
+            nerve specialist]
+  related_terms: [brain, nerve, nerves, stroke, epilepsy, migraine, neuro]
+  notes: >
+    Bare "neuro" and "brain specialist" are left unresolved on purpose: either
+    could mean neurology or neurosurgery.
+
+- id: nephrology
+  name: Nephrology
+  practitioner: Nephrologist
+  category: medical
+  distinct_from: [urology]
+  aliases: [nephrology, nephrologist, renal medicine]
+  related_terms: [kidney, kidneys, dialysis, kidney specialist, kidney doctor]
+  notes: >
+    "Kidney specialist" means a nephrologist to some patients and a urologist
+    (stones, prostate) to others, so it suggests both.
+
+- id: gastroenterology
+  name: Gastroenterology
+  practitioner: Gastroenterologist
+  category: medical
+  distinct_from: [surgical_gastroenterology]
+  aliases: [gastroenterology, gastroenterologist, medical gastroenterology,
+            gastroenterology and hepatology, gastroenterology & hepatology,
+            hepatology, hepatologist]
+  related_terms: [stomach, liver, acidity, intestine, gastro, liver specialist]
+  notes: >
+    Bare "gastro" and "liver specialist" also describe a GI or liver surgeon,
+    so they suggest rather than resolve.
+
+- id: endocrinology
+  name: Endocrinology
+  practitioner: Endocrinologist
+  category: medical
+  distinct_from: [diabetology]
+  aliases: [endocrinology, endocrinologist, hormone specialist,
+            endocrinology and diabetes, endocrinology & diabetes,
+            diabetes and endocrinology, diabetes & endocrinology]
+  related_terms: [thyroid, diabetes, hormones, hormone, PCOS, obesity]
+
+- id: diabetology
+  name: Diabetology
+  practitioner: Diabetologist
+  category: medical
+  aliases: [diabetology, diabetologist, diabetes specialist]
+  related_terms: [diabetes, sugar, blood sugar]
+  notes: >
+    Kept apart from endocrinology. In India a diabetologist is often a physician
+    with a diabetes qualification rather than a DM endocrinologist, and a search
+    for one should not quietly return the other.
+
+- id: rheumatology
+  name: Rheumatology
+  practitioner: Rheumatologist
+  category: medical
+  aliases: [rheumatology, rheumatologist,
+            clinical immunology and rheumatology,
+            clinical immunology & rheumatology]
+  related_terms: [arthritis, joints, lupus, gout]
+
+- id: clinical_haematology
+  name: Clinical Haematology
+  practitioner: Haematologist
+  category: medical
+  aliases: [clinical haematology, haematology, haematologist, hematologist,
+            haemato oncology, hemato oncology, blood specialist]
+  related_terms: [blood, anaemia, thalassemia, leukaemia, leukemia, blood cancer]
+  notes: >
+    In a specialty context bare "haematology" is the clinical department. The
+    lab section of the same name lives in the test taxonomy, a separate index.
+
+- id: medical_oncology
+  name: Medical Oncology
+  practitioner: Medical Oncologist
+  category: medical
+  distinct_from: [surgical_oncology, radiation_oncology]
+  aliases: [medical oncology, medical oncologist]
+  related_terms: [cancer, chemotherapy, tumour, oncology, oncologist,
+                  cancer specialist, blood cancer]
+  notes: >
+    Bare "oncology", "oncologist" and "cancer specialist" name all three
+    oncologies, so each is a related term on all three.
+
+- id: radiation_oncology
+  name: Radiation Oncology
+  practitioner: Radiation Oncologist
+  category: medical
+  distinct_from: [medical_oncology, surgical_oncology]
+  aliases: [radiation oncology, radiation oncologist, radiotherapy,
+            radiotherapist]
+  related_terms: [cancer, radiation, tumour, oncology, oncologist,
+                  cancer specialist]
+  notes: MD Radiotherapy is the older name of the same degree.
+
+- id: infectious_diseases
+  name: Infectious Diseases
+  practitioner: Infectious Diseases Specialist
+  category: medical
+  aliases: [infectious diseases, infectious disease, ID specialist,
+            infectious disease specialist, infectious diseases specialist]
+  related_terms: [HIV, infection, tuberculosis, TB]
+
+- id: geriatrics
+  name: Geriatric Medicine
+  practitioner: Geriatrician
+  category: medical
+  aliases: [geriatric medicine, geriatrics, geriatrician]
+  related_terms: [elderly, old age, senior citizen]
+
+- id: physical_medicine_rehabilitation
+  name: Physical Medicine & Rehabilitation
+  practitioner: Physiatrist
+  category: medical
+  distinct_from: [physiotherapy]
+  aliases: [physical medicine and rehabilitation,
+            physical medicine & rehabilitation, PMR, PM&R, physiatrist,
+            physiatry, rehabilitation medicine]
+  related_terms: [rehabilitation, disability]
+  notes: >
+    A physiatrist is a doctor (MD PMR); a physiotherapist is not. One letter
+    apart in "physical medicine" and "physical therapy", and never the same.
+
+# -------------------------------------------------------------- surgical ----
+
+- id: general_surgery
+  name: General Surgery
+  practitioner: General Surgeon
+  category: surgical
+  aliases: [general surgery, general surgeon, surgery,
+            general and laparoscopic surgery, general & laparoscopic surgery]
+  related_terms: [hernia, piles, appendix, gallbladder, gallstones]
+  notes: >
+    Bare "surgery" resolves here for the same reason "medicine" resolves to
+    general medicine: it is how a hospital names the department. Bare
+    "laparoscopic surgery" does not; gynaecologists and urologists use it too.
+
+- id: orthopaedics
+  name: Orthopaedics
+  practitioner: Orthopaedic Surgeon
+  category: surgical
+  aliases: [orthopaedics, orthopedics, orthopaedic surgeon, orthopedic surgeon,
+            orthopaedic surgery, orthopedic surgery, orthopaedician,
+            orthopedician, bone specialist, bone doctor,
+            trauma and orthopaedics, trauma & orthopaedics]
+  related_terms: [bone, bones, joints, fracture, knee, spine, arthritis, ortho,
+                  joint replacement]
+  notes: >
+    Bare "ortho" is what most patients mean by orthopaedics, but dentists use
+    it for orthodontics, so it suggests both.
+
+- id: ent
+  name: ENT
+  practitioner: ENT Specialist
+  category: surgical
+  aliases: [otorhinolaryngology, otolaryngology, ear nose and throat,
+            ear nose & throat, ENT surgeon, ENT specialist, ENT doctor,
+            otorhinolaryngologist, otolaryngologist]
+  related_terms: [ear, nose, throat, hearing, sinus, tonsils]
+
+- id: ophthalmology
+  name: Ophthalmology
+  practitioner: Ophthalmologist
+  category: surgical
+  aliases: [ophthalmology, ophthalmologist, opthalmology, opthalmologist,
+            eye specialist, eye doctor, eye surgeon]
+  related_terms: [eye, eyes, cataract, vision, glaucoma, spectacles]
+  notes: The "opthalmology" misspelling is common enough in print to index.
+
+- id: neurosurgery
+  name: Neurosurgery
+  practitioner: Neurosurgeon
+  category: surgical
+  distinct_from: [neurology]
+  aliases: [neurosurgery, neurosurgeon, neuro surgery, neuro surgeon,
+            brain surgeon, brain and spine surgery, brain & spine surgery]
+  related_terms: [brain, spine, brain tumour, neuro]
+
+- id: urology
+  name: Urology
+  practitioner: Urologist
+  category: surgical
+  distinct_from: [nephrology]
+  aliases: [urology, urologist, andrology, andrologist,
+            urology and andrology, urology & andrology]
+  related_terms: [kidney, kidney stone, kidney stones, prostate, bladder,
+                  kidney specialist, kidney doctor]
+
+- id: cardiothoracic_surgery
+  name: Cardiothoracic & Vascular Surgery
+  practitioner: Cardiothoracic Surgeon
+  category: surgical
+  distinct_from: [cardiology]
+  aliases: [CTVS, CVTS, cardiothoracic and vascular surgery,
+            cardiothoracic & vascular surgery,
+            cardio thoracic and vascular surgery,
+            cardio thoracic & vascular surgery, cardiothoracic surgery,
+            cardio thoracic surgery, cardiothoracic surgeon, cardiac surgery,
+            cardiac surgeon, heart surgeon, heart surgery]
+  related_terms: [heart, bypass, heart valve, chest]
+
+- id: vascular_surgery
+  name: Vascular Surgery
+  practitioner: Vascular Surgeon
+  category: surgical
+  aliases: [vascular surgery, vascular surgeon, vascular and endovascular surgery,
+            vascular & endovascular surgery]
+  related_terms: [varicose veins, veins, arteries, diabetic foot]
+
+- id: plastic_surgery
+  name: Plastic Surgery
+  practitioner: Plastic Surgeon
+  category: surgical
+  aliases: [plastic surgery, plastic surgeon, plastic and reconstructive surgery,
+            plastic & reconstructive surgery, reconstructive surgery,
+            cosmetic surgery, cosmetic surgeon, aesthetic surgery,
+            burns and plastic surgery, burns & plastic surgery]
+  related_terms: [burns, cleft lip, hair transplant]
+
+- id: surgical_gastroenterology
+  name: Surgical Gastroenterology
+  practitioner: GI Surgeon
+  category: surgical
+  distinct_from: [gastroenterology]
+  aliases: [surgical gastroenterology, surgical gastroenterologist, GI surgery,
+            GI surgeon, gastrointestinal surgery, gastrointestinal surgeon,
+            gastro surgery, gastro surgeon, HPB surgery]
+  related_terms: [stomach, liver, pancreas, gallbladder, intestine, gastro,
+                  liver specialist]
+
+- id: surgical_oncology
+  name: Surgical Oncology
+  practitioner: Surgical Oncologist
+  category: surgical
+  distinct_from: [medical_oncology, radiation_oncology]
+  aliases: [surgical oncology, surgical oncologist, cancer surgeon,
+            onco surgery, oncosurgery, onco surgeon, oncosurgeon]
+  related_terms: [cancer, tumour, oncology, oncologist, cancer specialist]
+
+- id: paediatric_surgery
+  name: Paediatric Surgery
+  practitioner: Paediatric Surgeon
+  category: surgical
+  distinct_from: [paediatrics]
+  aliases: [paediatric surgery, paediatric surgeon, child surgeon]
+  related_terms: [child, children, baby]
+  notes: >
+    names.normalise folds "paediatric" to "pediatric", so the US spellings
+    resolve without being listed. It does not fold "paediatrics" or
+    "paediatrician", which is why those are listed both ways under paediatrics.
+
+- id: reproductive_medicine
+  name: Reproductive Medicine
+  practitioner: Fertility Specialist
+  category: surgical
+  aliases: [reproductive medicine, reproductive medicine and surgery,
+            reproductive medicine & surgery, fertility specialist,
+            infertility specialist, IVF specialist]
+  related_terms: [IVF, IUI, infertility, fertility]
+  notes: The NMC super-specialty is MCh Reproductive Medicine and Surgery.
+
+# ---------------------------------------------------------------- dental ----
+
+- id: dentistry
+  name: Dentistry
+  practitioner: Dentist
+  category: dental
+  distinct_from: [oral_maxillofacial_surgery]
+  aliases: [dentistry, dentist, dental, dental surgeon, dental surgery,
+            general dentistry, general dentist]
+  related_terms: [teeth, tooth, gums, root canal, braces]
+  notes: >
+    "Dental surgeon" is the title of any BDS dentist. "Oral surgeon" is the
+    MDS specialist. They sound interchangeable and are not.
+
+- id: orthodontics
+  name: Orthodontics
+  practitioner: Orthodontist
+  category: dental
+  aliases: [orthodontics, orthodontist,
+            orthodontics and dentofacial orthopaedics,
+            orthodontics & dentofacial orthopaedics]
+  related_terms: [braces, aligners, teeth alignment, ortho]
+
+- id: oral_maxillofacial_surgery
+  name: Oral & Maxillofacial Surgery
+  practitioner: Maxillofacial Surgeon
+  category: dental
+  aliases: [oral and maxillofacial surgery, oral & maxillofacial surgery, OMFS,
+            maxillofacial surgery, maxillofacial surgeon, oral surgeon,
+            oral surgery]
+  related_terms: [jaw, wisdom tooth, wisdom teeth]
+
+# --------------------------------------------------------- allied health ----
+# Not doctors. Listed because hospitals run OPDs for them and patients search
+# for them, and because each is the easy confusion for a medical specialty.
+
+- id: physiotherapy
+  name: Physiotherapy
+  practitioner: Physiotherapist
+  category: allied_health
+  distinct_from: [physical_medicine_rehabilitation]
+  aliases: [physiotherapy, physiotherapist, physio, physical therapy,
+            physical therapist]
+  related_terms: [rehabilitation]
+
+- id: clinical_psychology
+  name: Clinical Psychology
+  practitioner: Clinical Psychologist
+  category: allied_health
+  distinct_from: [psychiatry]
+  aliases: [clinical psychology, clinical psychologist, psychologist, psychology]
+  related_terms: [mental health, depression, anxiety, counselling, counseling,
+                  psychotherapy]
+
+- id: dietetics
+  name: Dietetics & Nutrition
+  practitioner: Dietitian
+  category: allied_health
+  aliases: [dietetics, dietitian, dietician, nutritionist, clinical nutrition,
+            nutrition and dietetics, nutrition & dietetics,
+            dietetics and nutrition, dietetics & nutrition]
+  related_terms: [diet, weight loss, obesity, nutrition]
+
+- id: audiology_speech
+  name: Audiology & Speech Therapy
+  practitioner: Audiologist
+  category: allied_health
+  aliases: [audiology, audiologist, speech therapy, speech therapist,
+            audiology and speech language pathology,
+            audiology & speech language pathology, speech language pathologist,
+            speech and hearing, speech & hearing]
+  related_terms: [hearing, hearing aid, speech, stammering]

@@ -29,6 +29,7 @@ from typing import Any, Protocol
 import yaml
 
 from ratecard.registry import Registry
+from ratecard.specialties import Specialties
 from ratecard.taxonomy import Taxonomy
 
 PROVIDERS = Path(__file__).resolve().parent / "data" / "providers.yaml"
@@ -164,6 +165,25 @@ def alias_records(taxonomy: Taxonomy) -> list[tuple[str, str]]:
     """Every indexed surface form. Search resolves through these and nothing
     fuzzier - the matcher never runs at query time."""
     return sorted(taxonomy.alias_index.items())
+
+
+def specialty_records(specialties: Specialties) -> list[dict[str, Any]]:
+    return [{
+        "id": s.id,
+        "name": s.name,
+        "practitioner": s.practitioner,
+        "category": str(s.category),
+    } for s in sorted(specialties, key=lambda s: s.id)]
+
+
+def specialty_alias_records(specialties: Specialties) -> list[tuple[str, str]]:
+    """Surface forms that resolve, each to exactly one specialty."""
+    return sorted(specialties.alias_index.items())
+
+
+def specialty_term_records(specialties: Specialties) -> list[tuple[str, str]]:
+    """Related terms, one row per specialty they point at. They only suggest."""
+    return sorted((term, sid) for term, ids in specialties.term_index.items() for sid in ids)
 
 
 def source_records(registry: Registry, providers: list[Provider]) -> list[dict[str, Any]]:
