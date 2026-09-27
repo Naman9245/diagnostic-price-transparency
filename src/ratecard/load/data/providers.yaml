@@ -1,0 +1,28 @@
+# Stage 5: who charges the prices a source publishes.
+#
+# The registry says where a document came from; this says which physical
+# provider it prices, and where that provider is. A displayable source must map
+# to exactly one provider here, and that provider must have coordinates -
+# a price with no location cannot answer "near me".
+#
+# Coordinates are looked up, never recalled: the LOINC episode showed that a
+# plausible-looking identifier from memory is often one digit off. Record where
+# each came from in `geo_source`.
+#
+# Only real providers with a displayable published rate card belong here.
+# Fictional demo partners live in the Phase 07 seed, badged, never in this file.
+
+- slug: narayana-mazumdar-shaw-bengaluru
+  name: Mazumdar Shaw Medical Center
+  brand: Narayana Health
+  kind: hospital
+  city: Bengaluru
+  locality: Bommasandra
+  address: Narayana Health City, Hosur Road, Bommasandra, Bengaluru 560099
+  lat: 12.8064933
+  lng: 77.6946443
+  geo_source: >
+    Nominatim, 2026-09-27, OSM way 608640669 "Mazumdar Shaw Medical Center,
+    Hosur Road, Bommasandra ... 560099". Matches the unit named on the tariff.
+  phone: null  # not looked up yet; never guess one
+  sources: [narayana_mazumdar_shaw_bengaluru]

@@ -27,8 +27,10 @@ learn = ["scikit-learn>=1.4", "numpy>=1.26"]
 rerank = ["sentence-transformers>=3.0"]
 # Stages 2-3, Phase 04. Fetch and parse.
 pipeline = ["httpx>=0.27", "pdfplumber>=0.11", "selectolax>=0.3", "pypdf>=4.0"]
-# Stages 5-6, Phases 05-06.
-serve = ["fastapi>=0.115", "uvicorn>=0.30", "psycopg[binary]>=3.2", "geoalchemy2>=0.15"]
+# Stage 5, Phase 05: `ratecard load` writes to Postgres. There is no Python
+# server - the runtime is Supabase (PostGIS, RLS, Realtime) and the Next.js app
+# in web/, so FastAPI, uvicorn and geoalchemy2 were dropped.
+serve = ["psycopg[binary]>=3.2"]
 dev = ["pytest>=8.0", "ruff>=0.6"]
 
 [project.scripts]
@@ -39,6 +41,8 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "ratecard.taxonomy" = ["data/*.yaml"]
+"ratecard.registry" = ["data/*.yaml"]
+"ratecard.load" = ["data/*.yaml"]
 
 [tool.ruff]
 line-length = 100
