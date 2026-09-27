@@ -1,8 +1,9 @@
 """Command line entry point.
 
-    ratecard validate            validate the taxonomy, exit non-zero if broken
+    ratecard validate            validate the taxonomy and specialties, exit non-zero if broken
     ratecard stats               taxonomy shape: categories, panels, LOINC gaps
     ratecard lookup NAME...      resolve raw names through the alias index
+    ratecard specialty NAME...   resolve a specialty name, or list what it suggests
     ratecard check A B           why two canonical tests may not be matched
     ratecard hard-negatives      seed pairs for the Phase 03 evaluation set
     ratecard coverage CORPUS.csv measure the taxonomy against a Phase 00 dump
@@ -33,6 +34,8 @@ from ratecard.names import normalise
 from ratecard.normalise import explain
 from ratecard.registry import RegistryError
 from ratecard.registry import load as load_registry
+from ratecard.specialties import SpecialtyError, specialty_key
+from ratecard.specialties import load as load_specialties
 from ratecard.taxonomy import ValidationError, load
 from ratecard.taxonomy.coverage import analyse, hard_negative_pairs
 from ratecard.taxonomy.loader import collect_warnings
@@ -76,11 +79,25 @@ def _load_or_die():
         raise SystemExit(EXIT_INVALID) from exc
 
 
+def _specialties_or_die():
+    try:
+        return load_specialties()
+    except SpecialtyError as exc:
+        print("Specialty list is invalid.\n", file=sys.stderr)
+        for problem in exc.problems:
+            print(f"  ✗ {problem}", file=sys.stderr)
+        raise SystemExit(EXIT_INVALID) from exc
+
+
 def cmd_validate(_: argparse.Namespace) -> int:
     taxonomy = _load_or_die()
+    specialties = _specialties_or_die()
     warnings = collect_warnings(taxonomy)
     print(f"✓ taxonomy valid — {len(taxonomy)} canonical tests, "
           f"{len(taxonomy.alias_index)} indexed surface forms")
+    print(f"✓ specialties valid — {len(specialties)} specialties, "
+          f"{len(specialties.alias_index)} aliases, "
+          f"{len(specialties.term_index)} related terms")
     if warnings:
         print(f"\n{len(warnings)} advisory warning(s):")
         for warning in warnings[:25]:
@@ -123,6 +140,25 @@ def cmd_lookup(args: argparse.Namespace) -> int:
         test = taxonomy.lookup(raw)
         arrow = f"{test.id:<28} [{test.category}]" if test else "— no exact match, would go to the matcher"
         print(f"  {raw!r}\n    normalised: {normalise(raw)!r}\n    resolves to: {arrow}\n")
+    return EXIT_OK
+
+
+def cmd_specialty(args: argparse.Namespace) -> int:
+    specialties = _specialties_or_die()
+    for raw in args.names:
+        print(f"  {raw!r}\n    normalised: {specialty_key(raw)!r}")
+        found = specialties.lookup(raw)
+        if found:
+            print(f"    resolves to: {found.id:<28} {found.name} ({found.practitioner})\n")
+            continue
+        suggested = specialties.suggest(raw)
+        if suggested:
+            print("    resolves to: — nothing; it points at more than one, so the user picks:")
+            for s in suggested:
+                print(f"      · {s.id:<32} {s.name}")
+        else:
+            print("    resolves to: — nothing, and suggests nothing")
+        print()
     return EXIT_OK
 
 
@@ -452,6 +488,7 @@ def cmd_load(args: argparse.Namespace) -> int:
     from ratecard import load as stage5
 
     taxonomy = _load_or_die()
+    specialty_list = _specialties_or_die()
     corpus = Path(args.corpus)
     if not corpus.exists():
         print(f"Corpus not found: {corpus}. Run `ratecard ingest --fetch` first.",
@@ -480,6 +517,9 @@ def cmd_load(args: argparse.Namespace) -> int:
 
     tests = stage5.canonical_test_records(taxonomy)
     aliases = stage5.alias_records(taxonomy)
+    specialties = stage5.specialty_records(specialty_list)
+    specialty_aliases = stage5.specialty_alias_records(specialty_list)
+    specialty_terms = stage5.specialty_term_records(specialty_list)
     sources = stage5.source_records(registry, providers)
     prices = stage5.price_records(rows, matches, registry, providers)
 
@@ -487,6 +527,8 @@ def cmd_load(args: argparse.Namespace) -> int:
     print(f"  sources          {len(sources):>6}   displayable only")
     print(f"  canonical tests  {len(tests):>6}")
     print(f"  aliases          {len(aliases):>6}")
+    print(f"  specialties      {len(specialties):>6}   "
+          f"{len(specialty_aliases)} aliases, {len(specialty_terms)} related-term rows")
     print(f"  price rows       {len(prices.records):>6}")
     print(f"    public         {prices.public:>6}   exact alias hits")
     print(f"    held back      {len(prices.records) - prices.public:>6}   needs_review "
@@ -506,7 +548,9 @@ def cmd_load(args: argparse.Namespace) -> int:
     from ratecard.load.db import write
 
     with psycopg.connect(dsn) as conn:
-        counts = write(conn, tests, aliases, providers, sources, prices)
+        counts = write(conn, tests, aliases, providers, sources, prices,
+                       specialties=specialties, specialty_aliases=specialty_aliases,
+                       specialty_terms=specialty_terms)
     print("\n  written: " + ", ".join(f"{k} {v}" for k, v in counts.items()))
     return EXIT_OK
 
@@ -675,6 +719,10 @@ def main(argv: list[str] | None = None) -> int:
     lookup = sub.add_parser("lookup", help="resolve raw names")
     lookup.add_argument("names", nargs="+")
     lookup.set_defaults(fn=cmd_lookup)
+
+    specialty = sub.add_parser("specialty", help="resolve specialty names")
+    specialty.add_argument("names", nargs="+")
+    specialty.set_defaults(fn=cmd_specialty)
 
     check = sub.add_parser("check", help="why two tests may not be matched")
     check.add_argument("a")

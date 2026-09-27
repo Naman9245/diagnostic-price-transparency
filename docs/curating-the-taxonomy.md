@@ -54,3 +54,40 @@ handles it and a declaration adds noise.
 Every declaration is automatically a seed for the Phase 03 hard-negative
 evaluation set (`ratecard hard-negatives`), so writing one is also writing a
 test case.
+
+## Adding a specialty
+
+Specialties live in one file, `src/ratecard/specialties/data/specialties.yaml`,
+separate from the tests. Minimum viable entry:
+
+```yaml
+- id: rheumatology              # lowercase snake_case, permanent
+  name: Rheumatology            # the department, in Indian English spelling
+  practitioner: Rheumatologist  # what the doctor is called
+  category: medical             # medical | surgical | dental | allied_health
+  aliases: [rheumatology, rheumatologist]
+  related_terms: [arthritis, gout]
+```
+
+**Aliases** name this specialty and nothing else, exactly as for tests. Write
+both spellings where `names.normalise` does not fold them: it folds
+`paediatric`, `gynaecology` and `haematology`, but not `paediatrician`,
+`orthopaedics` or `gynaecologist`. Department words (`department`, `dept`,
+`OPD`, `clinic`, `consultation`, `consultant`, `unit`, `services`) are stripped
+before lookup, so "Department of Rheumatology" needs no alias of its own.
+
+**Related terms** are what a patient types that points here without naming it:
+a body part, a named condition, or an umbrella word. They may be shared, and
+they only ever suggest. If a word could name two specialties, it belongs here
+and not in aliases: "kidney specialist" is a related term on both nephrology and
+urology. Leave symptoms out; turning "chest pain" into a specialty is triage.
+
+**`distinct_from`** marks a pair patients confuse that is never the same:
+cardiology and cardiothoracic surgery, psychiatry and clinical psychology,
+physical medicine and physiotherapy. `tests/test_specialties.py` pins the
+common confusions; add a case when you add a trap.
+
+`ratecard validate` fails on duplicate ids or names, alias collisions, a related
+term that is also an alias, an alias made only of department words, and
+dangling `distinct_from` references. `ratecard specialty "some name"` shows what
+a name resolves to, or what it suggests.

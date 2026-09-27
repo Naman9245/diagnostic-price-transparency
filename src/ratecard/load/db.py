@@ -18,8 +18,15 @@ from ratecard.load.build import PriceBatch, Provider
 
 def write(conn: Any, tests: list[dict[str, Any]], aliases: list[tuple[str, str]],
           providers: list[Provider], sources: list[dict[str, Any]],
-          prices: PriceBatch) -> dict[str, int]:
-    """Load everything inside the caller's connection, as one transaction."""
+          prices: PriceBatch, *, specialties: list[dict[str, Any]],
+          specialty_aliases: list[tuple[str, str]],
+          specialty_terms: list[tuple[str, str]]) -> dict[str, int]:
+    """Load everything inside the caller's connection, as one transaction.
+
+    The specialty arguments are keyword-only and required: their aliases and
+    terms are replaced wholesale, so a caller that forgot them would silently
+    empty specialty search rather than leave it alone.
+    """
     counts: dict[str, int] = {}
     with conn.transaction(), conn.cursor() as cur:
         cur.executemany(
@@ -42,6 +49,30 @@ def write(conn: Any, tests: list[dict[str, Any]], aliases: list[tuple[str, str]]
             for surface, test_id in aliases:
                 copy.write_row((surface, test_id))
         counts["test_alias"] = len(aliases)
+
+        # Upserted, never deleted: a doctor row may point at a specialty, and
+        # the foreign key should refuse a removal rather than cascade it.
+        cur.executemany(
+            """insert into public.specialty (id, name, practitioner, category)
+               values (%(id)s, %(name)s, %(practitioner)s, %(category)s)
+               on conflict (id) do update set
+                 name = excluded.name, practitioner = excluded.practitioner,
+                 category = excluded.category""",
+            specialties,
+        )
+        counts["specialty"] = len(specialties)
+
+        cur.execute("delete from public.specialty_alias")
+        with cur.copy("copy public.specialty_alias (surface, specialty_id) from stdin") as copy:
+            for surface, specialty_id in specialty_aliases:
+                copy.write_row((surface, specialty_id))
+        counts["specialty_alias"] = len(specialty_aliases)
+
+        cur.execute("delete from public.specialty_term")
+        with cur.copy("copy public.specialty_term (term, specialty_id) from stdin") as copy:
+            for term, specialty_id in specialty_terms:
+                copy.write_row((term, specialty_id))
+        counts["specialty_term"] = len(specialty_terms)
 
         # partner_status is deliberately not in the update list: whether a real
         # provider has signed up is not the pipeline's business.
