@@ -21,6 +21,7 @@ Phase 03, in this order and no other:
 from __future__ import annotations
 
 import argparse
+import codecs
 import sys
 from pathlib import Path
 
@@ -635,21 +636,23 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
-def _utf8_streams() -> None:
-    """Print ✓ and ↔ on Windows too.
+def _utf8_stdio() -> None:
+    """Write UTF-8 to stdout and stderr, whatever the locale says.
 
-    A piped or redirected stream on Windows defaults to cp1252, which cannot
-    encode them, so `ratecard validate | more` died on UnicodeEncodeError before
-    reporting anything. An interactive console is already UTF-8 and unaffected.
+    On Windows a redirected or piped stream defaults to the ANSI codepage
+    (cp1252), which has no ✓ or ↔, so `ratecard validate > out.txt` died with
+    UnicodeEncodeError. An interactive console hid it: Python writes through
+    the console's UTF-8 API there. UTF-8 rather than errors="replace", which
+    would turn a raw name like β-hCG into ?-hCG in exactly the output where
+    names matter. Streams already in UTF-8 are left alone.
     """
     for stream in (sys.stdout, sys.stderr):
-        encoding = (getattr(stream, "encoding", None) or "").lower().replace("-", "")
-        if encoding != "utf8" and hasattr(stream, "reconfigure"):
-            stream.reconfigure(encoding="utf-8", errors="replace")
+        if hasattr(stream, "reconfigure") and codecs.lookup(stream.encoding).name != "utf-8":
+            stream.reconfigure(encoding="utf-8", errors="backslashreplace")
 
 
 def main(argv: list[str] | None = None) -> int:
-    _utf8_streams()
+    _utf8_stdio()
     parser = argparse.ArgumentParser(prog="ratecard", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
