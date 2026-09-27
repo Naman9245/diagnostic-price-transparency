@@ -9,6 +9,7 @@
     ratecard sources             the Stage 1 source registry
     ratecard ingest              stages 1-3: registry -> fetch -> parse -> CSV
     ratecard match CORPUS.csv    run the Stage 4 matcher over a corpus
+    ratecard load [CORPUS.csv]   stage 5: match displayable rows, write to Postgres
 
 Phase 03, in this order and no other:
     ratecard sample CORPUS.csv   draw the stratified labelling set
@@ -442,6 +443,73 @@ def cmd_match(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def cmd_load(args: argparse.Namespace) -> int:
+    """Stage 5. Matches only the displayable rows, then writes to Postgres."""
+    import csv
+    import os
+
+    from ratecard import load as stage5
+
+    taxonomy = _load_or_die()
+    corpus = Path(args.corpus)
+    if not corpus.exists():
+        print(f"Corpus not found: {corpus}. Run `ratecard ingest --fetch` first.",
+              file=sys.stderr)
+        return EXIT_INVALID
+    dsn = args.dsn or os.environ.get("DATABASE_URL")
+    if not dsn and not args.dry_run:
+        print("No database. Pass --dsn, set DATABASE_URL, or use --dry-run.", file=sys.stderr)
+        return EXIT_INVALID
+
+    try:
+        registry = load_registry()
+        providers = stage5.load_providers(registry, args.providers)
+    except (RegistryError, stage5.LoadError) as exc:
+        print("Cannot load.\n", file=sys.stderr)
+        for problem in exc.problems:
+            print(f"  ✗ {problem}", file=sys.stderr)
+        return EXIT_INVALID
+
+    with corpus.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    shown = {s.id for s in registry.displayable()}
+    names = sorted({r["raw_name"].strip() for r in rows if r["source"] in shown})
+    matcher = _matcher_or_die(taxonomy)
+    matches = {name: matcher.match(name) for name in names}
+
+    tests = stage5.canonical_test_records(taxonomy)
+    aliases = stage5.alias_records(taxonomy)
+    sources = stage5.source_records(registry, providers)
+    prices = stage5.price_records(rows, matches, registry, providers)
+
+    print(f"  providers        {len(providers):>6}")
+    print(f"  sources          {len(sources):>6}   displayable only")
+    print(f"  canonical tests  {len(tests):>6}")
+    print(f"  aliases          {len(aliases):>6}")
+    print(f"  price rows       {len(prices.records):>6}")
+    print(f"    public         {prices.public:>6}   exact alias hits")
+    print(f"    held back      {len(prices.records) - prices.public:>6}   needs_review "
+          f"or no answer; stored, never shown")
+    for reason, count in prices.skipped.most_common():
+        print(f"  skipped          {count:>6}   {reason}")
+
+    if args.dry_run:
+        print("\n  dry run: nothing written")
+        return EXIT_OK
+
+    try:
+        import psycopg
+    except ImportError as exc:
+        print(f"Writing needs psycopg: {exc}\n  pip install -e '.[serve]'", file=sys.stderr)
+        return EXIT_INVALID
+    from ratecard.load.db import write
+
+    with psycopg.connect(dsn) as conn:
+        counts = write(conn, tests, aliases, providers, sources, prices)
+    print("\n  written: " + ", ".join(f"{k} {v}" for k, v in counts.items()))
+    return EXIT_OK
+
+
 def cmd_sample(args: argparse.Namespace) -> int:
     taxonomy = _load_or_die()
     corpus = Path(args.corpus)
@@ -625,6 +693,13 @@ def main(argv: list[str] | None = None) -> int:
                            help="use the trained accept/abstain model instead of fixed thresholds")
     match_cmd.add_argument("--model", default="data/models/acceptor.json")
     match_cmd.set_defaults(fn=cmd_match)
+
+    load_cmd = sub.add_parser("load", help="stage 5: write the corpus into Postgres")
+    load_cmd.add_argument("corpus", nargs="?", default="data/corpus/phase00.csv")
+    load_cmd.add_argument("--dsn", help="Postgres URL; defaults to $DATABASE_URL")
+    load_cmd.add_argument("--providers", help="providers YAML (default: the packaged one)")
+    load_cmd.add_argument("--dry-run", action="store_true", help="build and report, write nothing")
+    load_cmd.set_defaults(fn=cmd_load)
 
     sample = sub.add_parser("sample", help="draw the stratified labelling set")
     sample.add_argument("corpus")

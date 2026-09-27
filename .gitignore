@@ -21,3 +21,7 @@ data/corpus/*
 *.csv.tmp
 
 .env
+
+# Next.js / Supabase / Razorpay test keys live here. Never committed.
+.env.local
+.env.*.local
