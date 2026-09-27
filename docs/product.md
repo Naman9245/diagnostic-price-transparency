@@ -56,23 +56,46 @@ ranking on price alone pushes people toward the worst lab in the area.
 **Not an emergency tool.** In an emergency nobody price-compares — they go to
 the nearest hospital or call an ambulance, and Google Maps already answers
 "nearest hospital" better than this ever will. Serving both crisis routing and
-price comparison would do neither well.
+price comparison would do neither well. The app's only emergency path is a
+button that dials 108 / 112 and opens a map; it never asks anyone to register
+or book first.
 
 **Not a price predictor.** Cut deliberately. Training one needs the dense price
 data whose absence motivated it, and a predicted number displayed inside a
 price-comparison result destroys the one thing the product sells: trust in the
 figure.
 
-**Not a booking platform.** Appointment booking requires hospital integrations
-that do not exist. It would be a fake button on a project whose entire value
-proposition is not lying about numbers.
+**Not a booking platform for providers who have not signed up.** Booking a
+hospital that is not taking part would be a fake button on a project whose
+entire value proposition is not lying about numbers. So booking exists only for
+**partner providers** — ones who sign up and run a staff dashboard where they
+publish doctor timings, today's OPD status and bookable slots.
+
+This is where the Zomato analogy starts to work again. A price comparison is
+built *against* the supply side; booking is built *with* it, because a clinic
+wants its slots filled the way a restaurant wants orders. The two halves stay
+separate:
+
+| | Price comparison | Booking, live status, queue |
+|---|---|---|
+| Who it covers | Every provider with a public, displayable rate card | Partner providers only |
+| Where data comes from | Extracted from published documents | Entered by the provider's own staff |
+| Everyone else sees | — | Phone number and directions, never a Book button |
+
+Patients register **once** and that one profile is reused at every partner, so
+nobody fills in the same form at a second counter.
+
+The current build is a portfolio demo. Its partner providers are **fictional,
+seeded, and badged "Demo"** everywhere they appear. They are never named after a
+real hospital. Real prices shown next to them stay real and sourced.
 
 ## The rule everything else follows
 
 > A price row can never exist without a source and a date.
 
 Every number shown links back to the document it came from, with a visible
-last-verified date. When the matcher is not confident which test a row refers
+last-verified date. A partner's own price list is a source too — "submitted by
+the provider on this date" — so the rule holds for them as well. When the matcher is not confident which test a row refers
 to, it **abstains** and the row is held back from public view rather than shown
 wrong.
 
