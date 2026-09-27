@@ -179,7 +179,7 @@ def _run_without_rapidfuzz(argv: list[str]):
 
 @pytest.mark.parametrize(
     "argv",
-    [["validate"], ["stats"], ["lookup", "haemogram"],
+    [["validate"], ["stats"], ["lookup", "haemogram"], ["specialty", "kidney doctor"],
      ["check", "cbc", "rbc_count"], ["hard-negatives"]],
 )
 def test_taxonomy_commands_run_without_rapidfuzz(argv):

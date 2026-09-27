@@ -43,6 +43,7 @@ where = ["src"]
 "ratecard.taxonomy" = ["data/*.yaml"]
 "ratecard.registry" = ["data/*.yaml"]
 "ratecard.load" = ["data/*.yaml"]
+"ratecard.specialties" = ["data/*.yaml"]
 
 [tool.ruff]
 line-length = 100
