@@ -17,10 +17,16 @@ BLOOD CELL COUNT` separate — is the whole problem.
 | 01 Taxonomy | done — 210 canonical tests, validating |
 | 02 Matcher | built, **untuned** — 20.7% of rows resolved, 205/210 tests observed |
 | 03 Label & evaluate | **train labelled (345/345, by Claude)**; holdout 0/155. Learned acceptor trained on train (`ratecard train`); unconfirmed on holdout |
-| 04 Pipeline | Stages 1-3 done — `ratecard ingest` builds 12,962 rows from 5 registry sources. Only **1 source is displayable**, which is the real gap |
-| 05–07 | not started (geo/DB/API, UI, provenance) |
+| 04 Pipeline | Stages 1-3 done — `ratecard ingest --fetch` builds ~13,000 rows from 5 registry sources (13,063 on 2026-09-27; sitemaps drift). Only **1 source is displayable**, which is the real gap |
+| 05 | Database & Stage 5 loader — schema in `supabase/migrations/`, `ratecard load` (dry run: 111 public rows, 106 tests). Tested offline; **not yet applied to a live database** |
+| 06 | not started — patient PWA: price search (`web/`, Next.js) |
+| 07 | not started — partner dashboard + fictional demo hospitals |
+| 08 | not started — register once, book, live queue (Supabase Auth + Realtime) |
+| 09 | not started — payments, Razorpay **test mode only** |
+| 10 | not started — ABHA via the ABDM sandbox, behind an adapter |
 
-Phase 03 is the deliverable. Everything after it is ordinary engineering.
+Phase 03 is the deliverable for the price side. Phases 07-10 are the partner
+side: booking exists only for providers who sign up — see `docs/product.md`.
 
 ## Commands
 
@@ -32,6 +38,7 @@ Phase 03 is the deliverable. Everything after it is ordinary engineering.
 .venv/bin/ratecard train                         # fit the learned acceptor (train split only)
 .venv/bin/ratecard match data/corpus/phase00.csv --learned
 .venv/bin/ratecard ingest --fetch                # stages 1-3, rebuild the corpus
+.venv/bin/ratecard load --dry-run                 # stage 5: what would be written / public
 .venv/bin/python -m pytest tests/ -q && .venv/bin/ruff check src tests scripts
 ```
 
@@ -107,6 +114,16 @@ been asserting the buggy value.
 - **A source with `display_ok: false` may never have a price shown.** Names
   may be harvested. The registry refuses `display_ok: true` without a city,
   because the census published Guwahati prices as Bengaluru ones.
+- **Only `display_ok` and not-`needs_review` rows are public.** Today that
+  means exact alias hits from one source. The learned acceptor's matches stay
+  out of public view until the holdout confirms it.
+- **Demo providers are fictional and badged "Demo" everywhere.** Never seed a
+  real hospital's name as a partner, and never give a demo provider a price
+  that could be mistaken for a real one — its prices come from a `demo_seed`
+  source.
+- **ABDM and Razorpay identifiers come from their official docs**, never from
+  memory — the LOINC episode below is why. Test keys only, in `.env.local`,
+  never committed.
 - **Never quote sample rates as corpus rates.** The evaluation sample is
   stratified; `corpus_estimate` reweights by the sizes in
   `data/eval/labels.csv.population.json`.
@@ -121,8 +138,14 @@ been asserting the buggy value.
   only and carries `display_ok=False`. The Bengaluru unit is Mazumdar Shaw.
 - **Search-first, not a feed.** Not an emergency tool. The claim is fixing
   *price opacity*, not "improving healthcare access".
-- **Cut and staying cut:** price prediction, appointment booking, blockchain
-  review ledger, real-time booking sync, price-lock guarantee.
+- **Cut and staying cut:** price prediction, blockchain review ledger,
+  real-time sync with a hospital's own HMIS, price-lock guarantee.
+- **Booking is partner-only** (reversed 2026-09-27; it was cut). A provider
+  whose `partner_status` is `none` never gets a Book button, and the database
+  refuses the insert — RLS, not just the UI.
+- **Runtime is Supabase + Next.js, no FastAPI.** Search is SQL (PostGIS,
+  pg_trgm) over exact aliases; the fuzzy matcher never runs at query time. Python
+  stays a batch pipeline.
 - **The rerank is a precision filter, not a recall booster**, and is off by
   default. Over 1,500 names it refused 204 lexical matches and added 11.
 
@@ -189,9 +212,9 @@ Every one of these has a regression test in `tests/test_regressions.py`.
   leaked in before the extraction filtered them. Label it `none`.
 - **31 Guwahati rows still fail to parse** (merged double-records). Reported in
   the script's output, not hidden.
-- Local folder is still `hopital_project` (typo). The GitHub remote is
-  `Naman9245/diagnostic-price-transparency`, private. Renaming the folder is
-  safe — nothing in the code depends on it.
+- The GitHub remote is `Naman9245/diagnostic-price-transparency`, private.
+  It is also cloned at `Documents/hospital` on the Windows machine, where the
+  venv lives at `.venv/Scripts/`, not `.venv/bin/`.
 
 ## Layout
 
@@ -207,6 +230,9 @@ src/ratecard/
   fetch/             Stage 2 — immutable raw store, hash-pinned
   parse/             Stage 3 — adapters dispatched by the registry's `parser`
   pipeline.py        stages 1-3 wired: registry -> fetch -> parse -> rows
+  load/              Stage 5 — build.py (pure, holds the public rules) db.py (psycopg)
+                     data/providers.yaml: who charges each displayable source, looked-up coords
+supabase/migrations/ price side + partner side; booking and queue are SQL functions
 scripts/             verify_loinc.py — re-check codes against the NLM table
 data/raw|interim|corpus/   gitignored, regenerable
 data/eval/                 COMMITTED — irreplaceable labels

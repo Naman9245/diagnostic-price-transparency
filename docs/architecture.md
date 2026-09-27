@@ -1,8 +1,48 @@
 # Architecture
 
+## The whole system
+
+```mermaid
+flowchart LR
+    subgraph batch["Batch pipeline · Python"]
+        R["1 Registry"] --> F["2 Fetch"] --> P["3 Parse"] --> N["4 Normalise"] --> L["5 Load"]
+    end
+    subgraph db["Supabase · Postgres + PostGIS"]
+        PT[("Price side")]
+        BT[("Partner side")]
+    end
+    subgraph app["6 · Next.js PWA"]
+        PA["Patient app"]
+        SD["Partner dashboard"]
+    end
+    L --> PT
+    PT -- "search_tests · prices_near" --> PA
+    BT -- "book_appointment · Realtime" --> PA
+    SD -- "RLS: own provider only" --> BT
+    PA -. "test mode" .-> RZ["Razorpay"]
+    PA -. "sandbox" .-> AB["ABDM · ABHA"]
+```
+
+Two halves share one database and one app, and are fed in opposite ways:
+
+- **The price side is extracted.** Nobody uploads a rate card, and an
+  expensive lab has every reason not to. So stages 1–5 are a batch pipeline
+  replayable from immutable raw files, and every price carries the document and
+  date it came from.
+- **The partner side is entered.** Doctors, timings, today's status and slots
+  come from a provider's own staff through the dashboard. It only exists for
+  providers who signed up, and the database, not the UI, is what refuses a
+  booking anywhere else.
+
+There is no application server between the database and the app. Both reads
+are SQL functions, and every write that matters goes through a function that
+checks its own rules.
+
+## The pipeline
+
 Six stages, one direction. Everything upstream of the database is a batch
 pipeline replayable from immutable raw files; everything downstream is a
-conventional read-heavy API.
+read-heavy app over Postgres.
 
 ```mermaid
 flowchart TD
@@ -14,7 +54,7 @@ flowchart TD
     end
     subgraph serve["read path"]
         S5["<b>5 Geocode &amp; load</b><br/>lat/lng, locality<br/><i>PostGIS · Nominatim</i>"]
-        S6["<b>6 Serve</b><br/>radius query, ranked,<br/>provenance per row<br/><i>FastAPI · Next.js</i>"]
+        S6["<b>6 Serve</b><br/>radius query, ranked,<br/>provenance per row<br/><i>Supabase · Next.js PWA</i>"]
     end
     S1 --> S2 --> S3 --> S4 --> S5 --> S6
     S4 -.->|"low confidence"| RQ["review queue<br/><i>needs_review</i>"]
@@ -45,9 +85,14 @@ documents.
 ordered by price" is one SQL query with a spatial index. Do not build that in
 application code, and do not reach for MongoDB.
 
-**6 Serve — FastAPI + Next.js.** Same language as the pipeline, so models and
-validation are shared rather than duplicated. Server rendering because a price
-page benefits from shareable URLs like `/bengaluru/cbc/indiranagar`.
+**6 Serve — Supabase + Next.js, no Python server.** The two queries the app
+needs are SQL functions: `search_tests` (trigram autocomplete over the exact
+alias table — it suggests, the user picks, nothing is guessed) and
+`prices_near` (PostGIS radius, cheapest first, source on every row). Booking,
+the live queue and access rules live in the same database (RLS, Realtime,
+`book_appointment`), so FastAPI would only have been a pass-through. Next.js
+for server rendering and shareable URLs like `/bengaluru/cbc/indiranagar`,
+shipped as an installable PWA. Schema: `supabase/migrations/`.
 
 ## Data model
 
@@ -131,9 +176,9 @@ and means nothing — which is worse than no comparison.
 |---|---|
 | **Python** for the pipeline | The PDF, fuzzy-matching and embedding libraries all live here and nowhere else |
 | **Postgres + PostGIS** | The core query is spatial. One index, one SQL statement |
-| **FastAPI** | Same language as the pipeline; shared models and validation |
-| **Next.js** | Server rendering and shareable URLs for price pages |
-| **Neon/Supabase + Railway + Vercel** | Usable free tiers, no card needed for a student project |
+| **Supabase** | Postgres + PostGIS with Auth, RLS and Realtime; booking and the queue need all four |
+| **Next.js (PWA)** | Server rendering, shareable URLs, installs on a phone without an app store |
+| **Supabase + Vercel** | Usable free tiers, no card needed for a student project |
 
 ## Repository layout
 
@@ -160,7 +205,29 @@ data/
   eval/                    COMMITTED — hand labels are irreplaceable
 ```
 
+## The partner side
+
+Booking exists only for providers who sign up ([product.md](product.md)), and
+the database enforces it. Seven more tables, in
+`supabase/migrations/20260927120100_partner_side.sql`:
+
+| table | holds |
+|---|---|
+| `provider_staff` | who may run a provider's dashboard |
+| `doctor`, `schedule_rule` | who sits when; weekly rules in IST, slot length, seats per slot |
+| `doctor_day_status` | today's truth: arrived, delayed by N minutes, on leave; `queue_version` for Realtime |
+| `patient_profile` | filled once, reused at every partner |
+| `appointment` | slot, seat, token; one live appointment per seat by unique index |
+| `payment` | Razorpay order and payment ids, written only after the webhook verifies |
+
+A provider's `partner_status` (`none`, `demo`, `live`) decides everything:
+`none` is price-only and can never be booked — `book_appointment` refuses and a
+trigger on `appointment` refuses again. `demo` providers are fictional, and a
+trigger ties them to `demo_seed` sources in both directions, so demo prices can
+never sit on a real provider and a real document can never price a demo one.
+
 ## What is built
 
-Stages 1–3 exist only as the throwaway Phase 00 script. Stage 4 is real. Stages
-5–6 are seams. See [CLAUDE.md](../CLAUDE.md) for current phase state.
+Stages 1–4 are real. Stage 5 is `ratecard load` plus the migrations in
+`supabase/migrations/`. Stage 6 is next. See [CLAUDE.md](../CLAUDE.md) for
+current phase state.

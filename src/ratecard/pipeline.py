@@ -8,11 +8,13 @@ the same work with the sources hardcoded; this reads them.
 from __future__ import annotations
 
 import re
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
 from ratecard import parse as adapters
 from ratecard.fetch import RawStore
+from ratecard.fetch.store import POLITE_PAUSE
 from ratecard.parse.rows import RawRow
 from ratecard.registry import Format, Registry, Source
 
@@ -67,6 +69,7 @@ def documents_for(source: Source, store: RawStore, client=None) -> list[str]:
             response = client.get(url)
             response.raise_for_status()
             path.write_bytes(response.content)
+            time.sleep(POLITE_PAUSE)
         texts.append(path.read_text(encoding="utf-8", errors="replace"))
     return texts
 

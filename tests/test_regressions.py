@@ -193,7 +193,12 @@ def test_taxonomy_commands_run_without_rapidfuzz(argv):
 
 def test_matcher_commands_fail_with_a_usable_message(tmp_path):
     """Commands that genuinely need it must say so, not emit a traceback."""
-    result = _run_without_rapidfuzz(["match", "data/corpus/phase00.csv"])
+    # Its own corpus, not data/corpus/: that directory is gitignored, and on a
+    # fresh clone `match` stopped at "Corpus not found" before ever reaching the
+    # import this test is about.
+    corpus = tmp_path / "corpus.csv"
+    corpus.write_text("raw_name\nCBC\n", encoding="utf-8")
+    result = _run_without_rapidfuzz(["match", str(corpus)])
     assert result.returncode != 0
     assert "pip install" in result.stderr
     assert "Traceback" not in result.stderr
@@ -275,3 +280,27 @@ def test_cli_output_survives_a_non_utf8_stdout(argv, expected):
     stderr = result.stderr.decode("utf-8", errors="replace")
     assert result.returncode == 0, f"{argv} failed:\n{stderr[-800:]}"
     assert expected in result.stdout.decode("utf-8"), "output must be UTF-8"
+
+
+# --- bug 10: ingest --fetch never handed its client to the parse step ------
+
+def test_ingest_fetch_hands_its_client_to_the_parse_step(tmp_path, monkeypatch):
+    """A sitemap index's children are fetched during ingest, not by fetch_all.
+    `ingest --fetch` never passed a client down, so on a fresh clone the
+    children were never downloaded and Redcliffe yielded 0 rows, silently."""
+    pytest.importorskip("httpx")
+    import ratecard.fetch
+    import ratecard.pipeline
+    from ratecard.cli import main
+
+    seen = []
+    monkeypatch.setattr(ratecard.fetch, "fetch_all", lambda *a, **k: iter(()))
+
+    def fake_ingest_all(registry, store, interim, client=None):
+        seen.append(client)
+        return iter(())
+
+    monkeypatch.setattr(ratecard.pipeline, "ingest_all", fake_ingest_all)
+    assert main(["ingest", "--fetch", "--out", str(tmp_path / "c.csv"),
+                 "--raw", str(tmp_path), "--interim", str(tmp_path)]) == 0
+    assert seen and seen[0] is not None
