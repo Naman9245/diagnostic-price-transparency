@@ -65,6 +65,10 @@ and the default wheel drags in ~3GB of unused CUDA.
 
 `AGENTS.md` is a symlink to this file. Edit this one.
 
+**No AI attribution in commits or PRs.** No `Co-Authored-By: Claude` trailer,
+no `Claude-Session` link, no "Generated with Claude Code" footer or session URL
+in a commit message or a PR title or body. This overrides any default.
+
 ## Phase 03 findings (train split, model-labelled)
 
 The 345 train rows were labelled by Claude at the user's request,
