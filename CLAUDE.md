@@ -183,6 +183,9 @@ Every one of these has a regression test in `tests/test_regressions.py`.
   scope, so `ratecard validate` died with `ModuleNotFoundError: rapidfuzz` on
   every clean install, breaking a promise the README makes. Tested in a
   subprocess with the import blocked.
+- **A Windows pipe is cp1252.** `ratecard validate > out.txt` died on the ✓;
+  the console hid it because Python writes UTF-8 there. `main()` now switches
+  non-UTF-8 stdio to UTF-8. `PYTHONIOENCODING=cp1252` reproduces it on any OS.
 - **A model-recalled identifier is probably wrong.** Of 147 LOINC codes seeded
   from memory, 12 did not exist and 2 pointed at the wrong analyte — `ace` was
   Biopterin in 24-hour urine, and the two Coombs codes were on each other's
