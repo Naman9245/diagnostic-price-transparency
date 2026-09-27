@@ -171,7 +171,7 @@ def _run_without_rapidfuzz(argv: list[str]):
     """Run a CLI command in a subprocess where rapidfuzz cannot be imported."""
     return subprocess.run(
         [sys.executable, "-c", _BLOCK_RAPIDFUZZ.format(argv=argv)],
-        capture_output=True, text=True, check=False,
+        capture_output=True, text=True, encoding="utf-8", check=False,
         cwd=Path(__file__).resolve().parent.parent,
     )
 
@@ -192,7 +192,12 @@ def test_taxonomy_commands_run_without_rapidfuzz(argv):
 
 def test_matcher_commands_fail_with_a_usable_message(tmp_path):
     """Commands that genuinely need it must say so, not emit a traceback."""
-    result = _run_without_rapidfuzz(["match", "data/corpus/phase00.csv"])
+    # Its own corpus, not data/corpus/: that directory is gitignored, and on a
+    # fresh clone `match` stopped at "Corpus not found" before ever reaching the
+    # import this test is about.
+    corpus = tmp_path / "corpus.csv"
+    corpus.write_text("raw_name\nCBC\n", encoding="utf-8")
+    result = _run_without_rapidfuzz(["match", str(corpus)])
     assert result.returncode != 0
     assert "pip install" in result.stderr
     assert "Traceback" not in result.stderr
@@ -252,3 +257,25 @@ def test_a_confusion_still_counts_against_recall(tmp_path):
                              "stratum": "lexical", "split": "train",
                              "matcher_confidence": "90"})
     assert evaluate(labels, split="train").recall() == pytest.approx(1 / 2)
+
+
+def test_ingest_fetch_hands_its_client_to_the_parse_step(tmp_path, monkeypatch):
+    """A sitemap index's children are fetched during ingest, not by fetch_all.
+    `ingest --fetch` never passed a client down, so on a fresh clone the
+    children were never downloaded and Redcliffe yielded 0 rows, silently."""
+    pytest.importorskip("httpx")
+    import ratecard.fetch
+    import ratecard.pipeline
+    from ratecard.cli import main
+
+    seen = []
+    monkeypatch.setattr(ratecard.fetch, "fetch_all", lambda *a, **k: iter(()))
+
+    def fake_ingest_all(registry, store, interim, client=None):
+        seen.append(client)
+        return iter(())
+
+    monkeypatch.setattr(ratecard.pipeline, "ingest_all", fake_ingest_all)
+    assert main(["ingest", "--fetch", "--out", str(tmp_path / "c.csv"),
+                 "--raw", str(tmp_path), "--interim", str(tmp_path)]) == 0
+    assert seen and seen[0] is not None
