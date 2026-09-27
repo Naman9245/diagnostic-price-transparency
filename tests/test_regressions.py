@@ -5,6 +5,7 @@ stays readable.
 """
 
 import csv
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -171,7 +172,7 @@ def _run_without_rapidfuzz(argv: list[str]):
     """Run a CLI command in a subprocess where rapidfuzz cannot be imported."""
     return subprocess.run(
         [sys.executable, "-c", _BLOCK_RAPIDFUZZ.format(argv=argv)],
-        capture_output=True, text=True, check=False,
+        capture_output=True, encoding="utf-8", check=False,
         cwd=Path(__file__).resolve().parent.parent,
     )
 
@@ -252,3 +253,25 @@ def test_a_confusion_still_counts_against_recall(tmp_path):
                              "stratum": "lexical", "split": "train",
                              "matcher_confidence": "90"})
     assert evaluate(labels, split="train").recall() == pytest.approx(1 / 2)
+
+
+# --- bug 9: CLI output crashed when redirected on Windows -------------------
+
+@pytest.mark.parametrize(
+    ("argv", "expected"),
+    [(["validate"], "✓ taxonomy valid —"), (["check", "cbc", "rbc_count"], "cbc ↔ rbc_count")],
+)
+def test_cli_output_survives_a_non_utf8_stdout(argv, expected):
+    """On Windows a piped or redirected stdout defaults to cp1252, which has
+    no ✓ or ↔, so `ratecard validate > out.txt` died with UnicodeEncodeError.
+    An interactive console hid it. PYTHONIOENCODING=cp1252 reproduces the
+    Windows pipe on any OS, so CI catches it without a Windows runner."""
+    result = subprocess.run(
+        [sys.executable, "-m", "ratecard.cli", *argv],
+        capture_output=True, check=False,
+        cwd=Path(__file__).resolve().parent.parent,
+        env={**os.environ, "PYTHONIOENCODING": "cp1252"},
+    )
+    stderr = result.stderr.decode("utf-8", errors="replace")
+    assert result.returncode == 0, f"{argv} failed:\n{stderr[-800:]}"
+    assert expected in result.stdout.decode("utf-8"), "output must be UTF-8"
