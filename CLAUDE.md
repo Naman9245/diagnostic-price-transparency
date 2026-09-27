@@ -189,9 +189,8 @@ Every one of these has a regression test in `tests/test_regressions.py`.
   leaked in before the extraction filtered them. Label it `none`.
 - **31 Guwahati rows still fail to parse** (merged double-records). Reported in
   the script's output, not hidden.
-- Local folder is still `hopital_project` (typo). The GitHub remote is
-  `Naman9245/diagnostic-price-transparency`, private. Renaming the folder is
-  safe — nothing in the code depends on it.
+- ~~Local folder is still `hopital_project` (typo)~~ **renamed to `hospital`.**
+  The GitHub remote is `Naman9245/diagnostic-price-transparency`, private.
 
 ## Layout
 

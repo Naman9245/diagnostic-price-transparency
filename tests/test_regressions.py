@@ -192,8 +192,14 @@ def test_taxonomy_commands_run_without_rapidfuzz(argv):
 
 
 def test_matcher_commands_fail_with_a_usable_message(tmp_path):
-    """Commands that genuinely need it must say so, not emit a traceback."""
-    result = _run_without_rapidfuzz(["match", "data/corpus/phase00.csv"])
+    """Commands that genuinely need it must say so, not emit a traceback.
+
+    The corpus is written here rather than read from data/corpus/, which is
+    gitignored: on a clean checkout `match` stopped at "Corpus not found"
+    before it reached the import this test is about."""
+    corpus = tmp_path / "phase00.csv"
+    corpus.write_text("raw_name\nCBC\n", encoding="utf-8")
+    result = _run_without_rapidfuzz(["match", str(corpus)])
     assert result.returncode != 0
     assert "pip install" in result.stderr
     assert "Traceback" not in result.stderr
