@@ -1,0 +1,24 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+
+# On top of the recommended set: const widgets where possible (fewer
+# rebuilds), final locals, one quote style and sorted imports.
+linter:
+  rules:
+    - prefer_const_constructors
+    - prefer_const_declarations
+    - prefer_const_literals_to_create_immutables
+    - prefer_final_locals
+    - prefer_single_quotes
+    - avoid_redundant_argument_values
+    - unnecessary_lambdas
+    - directives_ordering
+
+formatter:
+  page_width: 100
