@@ -1,0 +1,888 @@
+/* RateCard Admin: the same palette and typeface as the mobile app. */
+
+:root {
+  --brand: #347a71;
+  --brand-dark: #2a665e;
+  --brand-tint: #e3efed;
+  --coral: #c4453c;
+  --dot: #e3a21a;
+  --ink: #1d2327;
+  --slate: #6b747b;
+  --mist: #f4f6f7;
+  --line: #e5eaec;
+  --amber: #8a5300;
+  --amber-tint: #fff4e0;
+  --demo: #f8cb46;
+
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--mist);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--mist);
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  color: var(--slate);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* ---- Frame: sidebar and page ---- */
+
+.shell {
+  display: grid;
+  grid-template-columns: 226px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 22px 14px;
+  background: #fff;
+  border-right: 1px solid var(--line);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.brand small {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--slate);
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.nav a:hover {
+  background: var(--mist);
+}
+
+.nav a.router-link-active {
+  background: var(--brand-tint);
+  color: var(--brand-dark);
+}
+
+.nav svg,
+.search svg,
+.dropzone svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sidebar-note {
+  margin: auto 0 0;
+  padding: 12px;
+  border: 1px solid #f4e2a6;
+  border-radius: 12px;
+  background: #fff8e1;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.sidebar-note .demo-badge {
+  margin-right: 4px;
+}
+
+main {
+  min-width: 0;
+  padding: 28px 28px 56px;
+}
+
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.lede {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--slate);
+}
+
+.card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+
+.demo-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--demo);
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  vertical-align: 2px;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(320px, 100%);
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--slate);
+}
+
+.search:focus-within {
+  border-color: var(--brand);
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  color: var(--ink);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border: 0;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--brand);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--brand-dark);
+}
+
+.btn-primary:disabled {
+  background: #b9d4d0;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.link:disabled {
+  color: var(--slate);
+  cursor: not-allowed;
+}
+
+.error-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 16px;
+  padding: 14px 18px;
+  border-color: #ebc0bc;
+  color: var(--coral);
+  font-weight: 600;
+}
+
+.error-box p {
+  margin: 0;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #fff, var(--mist), #fff);
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+/* ---- Prices: the hospital x test table ---- */
+
+.matrix {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.matrix th,
+.matrix td {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.matrix th:last-child,
+.matrix td:last-child {
+  padding-right: 16px;
+}
+
+.matrix thead th {
+  padding-top: 14px;
+  padding-bottom: 12px;
+  color: var(--slate);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.matrix .col-partner {
+  width: 64px;
+  text-align: center;
+}
+
+.partner-yes {
+  color: var(--brand-dark);
+  font-weight: 800;
+}
+
+.h-meta .demo-badge {
+  margin-right: 4px;
+}
+
+.matrix .col-hospital {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  width: 262px;
+  min-width: 230px;
+  padding-left: 18px;
+  background: #fff;
+  text-align: left;
+  white-space: normal;
+}
+
+.hospital {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* A stripe in the colour of the tree the hospital is named after. */
+.swatch {
+  flex: none;
+  width: 8px;
+  height: 36px;
+  border-radius: 4px;
+}
+
+.h-name {
+  font-weight: 700;
+}
+
+.h-meta {
+  color: var(--slate);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.cell {
+  min-width: 74px;
+  padding: 7px 9px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: none;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap; /* keeps the changed-today dot beside the amount */
+  cursor: pointer;
+}
+
+.cell:hover {
+  border-color: var(--line);
+  background: var(--mist);
+}
+
+.cell.cheapest {
+  background: var(--brand-tint);
+  color: var(--brand-dark);
+  font-weight: 800;
+}
+
+.cell.priciest {
+  color: var(--coral);
+  font-weight: 800;
+}
+
+.cell.missing {
+  color: var(--slate);
+  font-weight: 500;
+}
+
+/* A small amber dot on prices changed today. */
+.cell.changed-today::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--dot);
+  vertical-align: 2px;
+}
+
+.cell.saved {
+  animation: saved 1.6s ease-out;
+}
+
+@keyframes saved {
+  from {
+    box-shadow: 0 0 0 3px rgb(52 122 113 / 0.35);
+  }
+  to {
+    box-shadow: 0 0 0 3px rgb(52 122 113 / 0);
+  }
+}
+
+.cell-input {
+  width: 86px;
+  padding: 7px 9px;
+  border: 1.5px solid var(--brand);
+  border-radius: 9px;
+  outline: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.matrix tbody tr:hover .col-hospital,
+.matrix tbody tr:hover td {
+  background: #fcfcfd;
+}
+
+.matrix tfoot th,
+.matrix tfoot td {
+  padding-top: 14px;
+  padding-bottom: 14px;
+  border-bottom: 0;
+  background: var(--mist);
+}
+
+.matrix tfoot .col-hospital {
+  background: var(--mist);
+}
+
+.spread {
+  display: block;
+  margin-left: auto;
+}
+
+.ratio {
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  margin-top: 4px;
+  color: var(--slate);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.key {
+  white-space: nowrap;
+}
+
+.key::before {
+  content: '';
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 5px;
+  border-radius: 3px;
+  vertical-align: -1px;
+}
+
+.key.cheapest::before {
+  background: var(--brand-dark);
+}
+
+.key.priciest::before {
+  background: var(--coral);
+}
+
+.key.changed::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--dot);
+  vertical-align: 1px;
+}
+
+/* Under a table: where the amount last pointed at or focused came from. */
+.caption {
+  margin: 10px 4px 0;
+  color: var(--slate);
+  font-size: 13px;
+}
+
+.empty {
+  padding: 28px;
+  color: var(--slate);
+  text-align: center !important;
+}
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  z-index: 10;
+  max-width: calc(100vw - 32px);
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.2);
+  transform: translateX(-50%);
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translate(-50%, 8px);
+}
+
+/* ---- Upload price sheet ---- */
+
+.upload-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+  margin-bottom: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.field select {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  font-size: 14.5px;
+  font-weight: 500;
+}
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 150px;
+  padding: 22px;
+  border: 2px dashed #d7d7de;
+  border-radius: 18px;
+  background: #fff;
+  text-align: center;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.dropzone.dragging {
+  border-color: var(--brand);
+  background: var(--brand-tint);
+}
+
+.dropzone svg {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 6px;
+  color: var(--brand);
+}
+
+.dropzone p {
+  margin: 0;
+}
+
+.drop-title {
+  font-weight: 700;
+}
+
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+  font-weight: 600;
+}
+
+.steps li::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 8px;
+  border: 2px solid var(--slate);
+  border-top-color: transparent;
+  border-radius: 50%;
+  vertical-align: -1px;
+  animation: spin 0.8s linear infinite;
+}
+
+.steps li.done::before {
+  content: '✓';
+  width: auto;
+  height: auto;
+  border: 0;
+  color: var(--brand-dark);
+  font-weight: 800;
+  animation: none;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sheet {
+  overflow: hidden;
+}
+
+.sheet-head,
+.sheet-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  padding: 16px 18px;
+}
+
+.sheet-head p,
+.sheet-foot p {
+  margin: 0;
+}
+
+.sheet-foot {
+  border-top: 1px solid var(--line);
+}
+
+.sheet-foot .muted {
+  flex: 1 1 360px;
+  font-size: 13px;
+}
+
+.tallies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rows {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.rows th,
+.rows td {
+  padding: 10px 12px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+}
+
+.rows thead th {
+  color: var(--slate);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rows .right {
+  text-align: right;
+}
+
+.rows .strong {
+  font-weight: 700;
+}
+
+.rows tr.none td {
+  color: var(--slate);
+}
+
+.rows tr.chosen {
+  background: #f6fbfa;
+}
+
+.rows input[type='checkbox'] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--brand);
+}
+
+/* Names exactly as they were printed: a typewriter face keeps them looking raw. */
+.raw {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 13px;
+}
+
+.match-pill {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.match-pill.exact {
+  background: var(--brand-tint);
+  color: var(--brand-dark);
+}
+
+.match-pill.review {
+  background: var(--amber-tint);
+  color: var(--amber);
+}
+
+.match-pill.none {
+  background: var(--mist);
+  color: var(--slate);
+}
+
+.notice {
+  flex-basis: 100%;
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.success {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border-color: #bfdcd6;
+  background: var(--brand-tint);
+  line-height: 1.6;
+}
+
+.success a {
+  margin-left: 6px;
+  color: var(--brand-dark);
+  font-weight: 700;
+}
+
+/* ---- Doctors ---- */
+
+/* As wide as on a laptop, so small screens scroll the table instead of squeezing it. */
+.doctors {
+  min-width: 980px;
+}
+
+/* ---- Press feedback: buttons, cells, links and tabs shrink a little while held ---- */
+
+.btn,
+.cell,
+.link,
+.nav a {
+  transition:
+    transform 0.12s ease-out,
+    background-color 0.15s,
+    color 0.15s;
+}
+
+.btn:active:not(:disabled),
+.link:active:not(:disabled),
+.nav a:active {
+  transform: scale(0.96);
+}
+
+.cell:active {
+  transform: scale(0.93);
+}
+
+/* ---- Small screens: the sidebar becomes a top bar ---- */
+
+@media (max-width: 820px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    padding: 12px 16px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .sidebar-note {
+    margin: 0;
+    flex-basis: 100%;
+  }
+
+  main {
+    padding: 20px 16px 48px;
+  }
+
+  .upload-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .matrix .col-hospital {
+    min-width: 230px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .btn:active:not(:disabled),
+  .link:active:not(:disabled),
+  .nav a:active,
+  .cell:active {
+    transform: none;
+  }
+}

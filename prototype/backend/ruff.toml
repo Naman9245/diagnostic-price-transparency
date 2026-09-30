@@ -1,0 +1,5 @@
+# The repo's settings, plus one fact ruff can't see from the repo root: this
+# folder's modules (store, auth...) are first-party, so they get their own
+# import block.
+extend = "../../pyproject.toml"
+src = ["."]
