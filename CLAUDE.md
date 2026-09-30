@@ -234,6 +234,8 @@ src/ratecard/
                      data/providers.yaml: who charges each displayable source, looked-up coords
 supabase/migrations/ price side + partner side; booking and queue are SQL functions
 scripts/             verify_loinc.py — re-check codes against the NLM table
+prototype/           standalone demo (FastAPI + Flutter + Vue) on fictional mock data, teal/mint UI.
+                     Not the runtime and not wired to the pipeline; see prototype/README.md
 data/raw|interim|corpus/   gitignored, regenerable
 data/eval/                 COMMITTED — irreplaceable labels
 data/models/acceptor.json  COMMITTED — trained model, plain JSON

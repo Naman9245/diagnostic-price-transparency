@@ -1,0 +1,6 @@
+# Admin dashboard
+admin/node_modules/
+admin/dist/
+
+# The API's virtualenv and caches are covered by the repo's root .gitignore.
+# The Flutter app has its own .gitignore in mobile/.
