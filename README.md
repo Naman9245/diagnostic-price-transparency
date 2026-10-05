@@ -35,6 +35,33 @@ slots filled. That asymmetry decides the whole architecture. See
 It is **not an emergency tool**. The app's only emergency path is a button that
 dials 108 / 112 and opens a map. It never asks anyone to register first.
 
+## See it: the clickable prototype
+
+[`prototype/`](prototype) is a working demo of the patient experience. You
+search for a test, see every nearby lab's price on one strip, find a doctor by
+specialty and book at a partner hospital. It has three parts:
+
+- a **Flutter** phone app
+- a **Vue** admin dashboard, where a hospital edits its prices and doctors'
+  fees and uploads a rate card
+- a **FastAPI** backend
+
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="prototype/screenshots/mobile-2-results.png" width="250" alt="Lipid Profile results: a price strip from ₹420 to ₹1,450, filter chips, and a list of labs with price, rating and Book Now or View buttons, each badged DEMO"><br><sub>One test, every lab's price on one strip</sub></td>
+    <td align="center" width="33%"><img src="prototype/screenshots/mobile-3-lab.png" width="250" alt="Lab profile for a fictional hospital: rating, facts, and the Lipid Profile price of ₹1,150 with where it sits among nearby labs, its source and its date"><br><sub>Every price shows its source and date</sub></td>
+    <td align="center" width="33%"><img src="prototype/screenshots/mobile-8-doctors.png" width="250" alt="Find your doctor: specialty chips with Cardiology chosen, and two fictional cardiologists with DEMO badges, hospital, rating, consultation fee and Book Now"><br><sub>Doctors by specialty, with their fees</sub></td>
+  </tr>
+</table>
+
+> [!NOTE]
+> Every hospital, doctor and price in the prototype is **made up**, and badged
+> **Demo** wherever it appears. Sign-in and bookings are mocked. The prototype
+> runs on its own mock data, not on the price pipeline below. It shows how the
+> app feels to use; the production stack is Supabase and Next.js (see
+> [Architecture](#architecture)). For how to run it and what to try, see
+> [prototype/README.md](prototype/README.md).
+
 ## The hard part: is "CBC" the same test as "COMPLETE BLOOD COUNT (CBC)"?
 
 Extraction is easy, because the source PDFs carry text layers. **Naming is
@@ -136,6 +163,7 @@ Full detail, the data model and every choice explained:
 | 03 | Label and evaluate | train split labelled (345, model-labelled); **holdout 0/155**; learned acceptor trained, opt-in |
 | 04 | Pipeline, stages 1–3 | done: `ratecard ingest --fetch` builds ~13,000 rows from 5 sources, **1 of which may be displayed** |
 | 05 | Database and loader | schema and `ratecard load` written; migrations tested against a local Postgres + PostGIS; not yet applied to a live Supabase |
+| — | Clickable prototype | done: Flutter app, Vue admin and FastAPI on fictional data, in [`prototype/`](prototype) |
 | 06 | Patient PWA: price search | next |
 | 07 | Partner dashboard, fictional demo hospitals | planned |
 | 08 | Register once, book, live queue | planned |
@@ -183,6 +211,10 @@ To load a database, apply `supabase/migrations/` to a Supabase project, then:
 DATABASE_URL="postgresql://..." ratecard load
 ```
 
+To run the clickable prototype, follow
+[prototype/README.md](prototype/README.md). It needs Python, Node.js and
+Flutter, but none of the setup above.
+
 ## Repository layout
 
 ```
@@ -194,6 +226,7 @@ src/ratecard/
   learn/ evaluate/          learned acceptor; stratified sampling, labelling, metrics
   load/                     stage 5: records for Postgres, and which of them may be public
 supabase/migrations/        schema, access rules, booking and queue functions
+prototype/                  clickable demo: Flutter app, Vue admin, FastAPI, fictional data
 data/eval/                  committed labels (irreplaceable)
 data/models/                the trained acceptor, plain JSON
 docs/                       product, architecture, matching, price engine
@@ -210,3 +243,4 @@ tests/                      including a regression test for every bug found in r
 | [docs/price-engine.md](docs/price-engine.md) | the engineering record: sources, numbers, rerank, review findings |
 | [docs/curating-the-taxonomy.md](docs/curating-the-taxonomy.md) | how to add a test, a specialty or an alias |
 | [docs/labelling-worked-examples.md](docs/labelling-worked-examples.md) | fifteen real rows labelled end to end |
+| [prototype/README.md](prototype/README.md) | the clickable demo: screenshots, how to run it, what's real and what's mocked |
