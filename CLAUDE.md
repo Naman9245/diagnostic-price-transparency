@@ -236,7 +236,8 @@ Every one of these has a regression test in `tests/test_regressions.py`.
   leaked in before the extraction filtered them. Label it `none`.
 - **31 Guwahati rows still fail to parse** (merged double-records). Reported in
   the script's output, not hidden.
-- The GitHub remote is `Naman9245/diagnostic-price-transparency`, private.
+- The GitHub remote is `Naman9245/diagnostic-price-transparency`, public
+  since 2026-10-05.
   It is also cloned at `Documents/hospital` on the Windows machine, where the
   venv lives at `.venv/Scripts/`, not `.venv/bin/`.
 
